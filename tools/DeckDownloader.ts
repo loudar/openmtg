@@ -1,4 +1,4 @@
-import type {Card, CardLine, Deck} from "../models/MTG.ts";
+import type {CardLine, Deck} from "../models/MTG.ts";
 import {MtgApi} from "./MtgApi.ts";
 import {cardLine} from "./Converters.ts";
 
@@ -14,21 +14,22 @@ export class DeckDownloader {
 
         const cards = [];
         for (const line of cardLines) {
-            const card = mtgCards.find((card) => card.name === card.name);
+            const card = mtgCards.cards.find((card) => card.name === line.name);
             if (card) {
                 const count = line.count ?? 1;
-                for (let i = 1; i < count; i++) {
+                for (let i = 0; i < count; i++) {
                     cards.push(card);
                 }
             }
         }
 
         return {
-            cards
+            cards,
+            errors: mtgCards.errors
         }
     }
 
     static async getFromString(input: string): Promise<Deck> {
-        return DeckDownloader.getFromCardList(input.split("\n").map(line => cardLine(line)));
+        return await DeckDownloader.getFromCardList(input.split("\n").map(line => cardLine(line)));
     }
 }

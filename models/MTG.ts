@@ -1,3 +1,5 @@
+import type {Card} from "mtggraphql";
+
 export enum CardTypes {
     Artifact = "Artifact",
     Conspiracy = "Conspiracy",
@@ -46,10 +48,9 @@ export enum MtgColor {
 export enum MtgShortColor {
     White = "W",
     Red = "R",
-    Blue = "B", // TODO: check real short code ????
-    Black = "B", // TODO: check real short code ????
+    Blue = "U",
+    Black = "B",
     Green = "G",
-    Undefined = "U",
 }
 
 export enum Formats {
@@ -107,44 +108,11 @@ export interface Legality {
     legality: string;
 }
 
-export interface Card {
-    name: string;
-    names: string[];
-    manaCost: string;
-    cmc: number;
-    colors: MtgColor[];
-    colorIdentity: string[];
-    type: string;
-    supertypes: CardSuperType[];
-    types: CardTypes[];
-    subtypes: CardSubType[];
-    rarity: string;
-    set: string;
-    text: string; // Contains \n for line separation, might be useful
-    artist: string;
-    number: string;
-    power: string;
-    toughness: string;
-    layout: string;
-    multiverseid: number;
-    imageUrl: string;
-    rulings: Ruling[];
-    foreignNames: ForeignName[];
-    printings: string[];
-    originalText: string;
-    originalType: string;
-    id: string;
-    legalities: Legality[];
-    source: string;
-    starter: boolean;
-    reserved: boolean;
-    timeshifted: boolean;
-    hand?: any;
-    life?: any;
-    watermark?: any;
+export interface CanHaveErrors {
+    errors?: string[];
 }
 
-export interface Deck {
+export interface Deck extends CanHaveErrors {
     cards: Card[];
     commander?: Card;
     tokens?: Card[];
