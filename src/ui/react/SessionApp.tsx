@@ -2,7 +2,7 @@
 import React, {useCallback, useState} from "react";
 import {createSession, joinSession, connectSessionWS} from "../../client/sessionClient.ts";
 import type {Player} from "../../server/sessionTypes.ts";
-import {startGameUI} from "../components/GameUI.ts";
+import {startGameUI} from "../components/GameView.ts";
 
 export function SessionApp() {
     const [name, setName] = useState("");

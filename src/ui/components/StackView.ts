@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { CardUI } from "./CardUI.ts";
+import { CardView } from "./CardView.ts";
 import type {ScryfallCard} from "../../models/Scryfall.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
 
@@ -112,13 +112,13 @@ export class StackView extends Container {
         if (this.faceDown) {
             if (this.type === "library") {
                 for (let i = 0; i < 3; i++) {
-                    const cardBack = new CardUI(undefined, w, h, true);
+                    const cardBack = new CardView(undefined, w, h, true);
                     cardBack.x = i * 2;
                     cardBack.y = i * 2;
                     this.content.addChild(cardBack);
                 }
             } else {
-                const cardBack = new CardUI(undefined, w, h, true);
+                const cardBack = new CardView(undefined, w, h, true);
                 this.content.addChild(cardBack);
             }
             this.countText.text = `${this.cards.length}`;
@@ -132,7 +132,7 @@ export class StackView extends Container {
         } else {
             // Show the top card using CardUI
             const top = this.cards[this.cards.length - 1];
-            const cardTop = new CardUI(top, w, h, false);
+            const cardTop = new CardView(top, w, h, false);
             this.content.addChild(cardTop);
             this.countText.text = `${this.cards.length}`;
         }

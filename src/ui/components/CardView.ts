@@ -1,82 +1,119 @@
-import {Container, Graphics, Text, TextStyle} from "pixi.js";
-import type {Card} from "mtggraphql";
+import {Assets, Container, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js";
+import type {ScryfallCard} from "../../models/Scryfall.ts";
 
-// Simple visual representation of a card that can be dragged around.
+// CardUI is responsible for rendering a single card (face-up or face-down)
+// Width/height are fixed per instance; callers position/scale externally as needed.
 export class CardView extends Container {
-    public readonly data?: Card;
-    public readonly cardName: string;
-    public widthPx: number;
-    public heightPx: number;
+    private card?: ScryfallCard;
+    private faceDown: boolean = false;
+    private readonly w: number;
+    private readonly h: number;
 
-    private bg: Graphics;
-    private title: Text;
+    private gfx?: Graphics;
+    private sprite?: Sprite;
+    private nameText?: Text;
 
-    constructor(opts: { name: string; data?: Card; width?: number; height?: number }) {
+    constructor(card?: ScryfallCard, width: number = 80, height: number = 110, faceDown: boolean = false) {
         super();
-        this.eventMode = "static"; // enable interaction
-        this.cursor = "pointer";
+        this.w = width;
+        this.h = height;
+        this.faceDown = faceDown;
 
-        this.data = opts.data;
-        this.cardName = opts.name;
-        this.widthPx = opts.width ?? 120;
-        this.heightPx = opts.height ?? 170;
-
-        this.bg = new Graphics();
-        this.drawBackground(0xeeeeee, 0x333333);
-        this.addChild(this.bg);
-
-        this.title = new Text({
-            text: this.name,
-            style: new TextStyle({
-                fontFamily: "Arial",
-                fontSize: 12,
-                fill: 0x111111,
-                wordWrap: true,
-                wordWrapWidth: this.widthPx - 12,
-            }),
-        });
-        this.title.x = 6;
-        this.title.y = 6;
-        this.addChild(this.title);
-
-        this.enableDragging();
+        if (card) {
+            this.card = card;
+            this.init().then();
+        } else {
+            this.redraw();
+        }
     }
 
-    private drawBackground(fill: number, stroke: number) {
-        const r = 8;
-        this.bg.clear();
-        this.bg.roundRect(0, 0, this.widthPx, this.heightPx, r);
-        this.bg.fill(fill);
-        this.bg.stroke({color: stroke, width: 2});
+    private async init(): Promise<void> {
+        if (this.card?.image_uris.normal) {
+            await Assets.load(this.card?.image_uris.normal);
+        }
+        this.redraw();
     }
 
-    private enableDragging() {
-        let dragging = false;
-        let offsetX = 0;
-        let offsetY = 0;
+    public setCard(card?: ScryfallCard) {
+        this.card = card;
+        this.redraw();
+    }
 
-        this.on("pointerdown", (e) => {
-            dragging = true;
-            const global = e.global;
-            offsetX = global.x - this.x;
-            offsetY = global.y - this.y;
-            this.alpha = 0.9;
-            this.zIndex = 9999; // bring to front heuristically when using zIndex sorting
-        });
+    public setFaceDown(v: boolean) {
+        this.faceDown = v;
+        this.redraw();
+    }
 
-        this.on("pointerup", () => {
-            dragging = false;
-            this.alpha = 1.0;
-        });
-        this.on("pointerupoutside", () => {
-            dragging = false;
-            this.alpha = 1.0;
-        });
+    public get widthPx() {
+        return this.w;
+    }
 
-        this.on("pointermove", (e) => {
-            if (!dragging) return;
-            const global = e.global;
-            this.position.set(global.x - offsetX, global.y - offsetY);
-        });
+    public get heightPx() {
+        return this.h;
+    }
+
+    private clear() {
+        this.removeChildren();
+        if (this.sprite) {
+            this.sprite.destroy({ children: true, texture: false });
+            this.sprite = undefined;
+        }
+        if (this.gfx) {
+            this.gfx.destroy();
+            this.gfx = undefined;
+        }
+        if (this.nameText) {
+            this.nameText.destroy();
+            this.nameText = undefined;
+        }
+    }
+
+    private redraw() {
+        this.clear();
+
+        // Base rounded rectangle (used as fallback and base frame)
+        const g = new Graphics();
+        const fillColor = this.faceDown ? 0x444444 : 0x2e2e2e;
+        const strokeColor = this.faceDown ? 0x222222 : 0x555555;
+        g.roundRect(0, 0, this.w, this.h, 6).fill(fillColor).stroke({ color: strokeColor, width: 2 });
+        this.addChild(g);
+        this.gfx = g;
+
+        if (this.faceDown) {
+            // Try to draw card back texture
+            try {
+                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
+                const spr = new Sprite(tex);
+                spr.width = this.w;
+                spr.height = this.h;
+                spr.x = 0;
+                spr.y = 0;
+                this.sprite = spr;
+                this.addChild(spr);
+            } catch {
+                // keep fallback base graphics
+            }
+            return;
+        }
+
+        if (this.card?.image_uris) {
+            const tex = Texture.from(this.card.image_uris.normal);
+            const spr = new Sprite(tex);
+            spr.width = this.w;
+            spr.height = this.h;
+            spr.x = 0;
+            spr.y = 0;
+            this.sprite = spr;
+            this.addChild(spr);
+        } else {
+            const name = this.card?.name || "Card";
+            const text = new Text({
+                text: name,
+                style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
+            });
+            text.position.set(4, 4);
+            this.addChild(text);
+            this.nameText = text;
+        }
     }
 }

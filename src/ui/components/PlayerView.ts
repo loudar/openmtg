@@ -5,7 +5,7 @@ import {CounterButton} from "./CounterButton.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
 
-export class PlayerUI extends Container {
+export class PlayerView extends Container {
     public setMaxHandWidth(width: number) {
         if (this.hand) {
             this.hand.setMaxWidth(width);

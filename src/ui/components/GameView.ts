@@ -1,15 +1,15 @@
 import {Application, Container, Assets} from "pixi.js";
-import {PlayerUI} from "./PlayerUI.ts";
+import {PlayerView} from "./PlayerView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {getSessionPublic} from "../../client/sessionClient.ts";
 
-export class GameUI {
+export class GameView {
     public app!: Application;
     public stage?: Container;
 
     // Player management
     private players: Player[] = [];
-    private playerViews = new Map<string, PlayerUI>();
+    private playerViews = new Map<string, PlayerView>();
     private readonly localPlayerId?: string;
     private readonly sessionId?: string;
     private readonly ws?: WebSocket;
@@ -143,7 +143,7 @@ export class GameUI {
         for (const p of this.players) {
             if (!this.playerViews.has(p.id)) {
                 const isLocal = p.id === this.localPlayerId;
-                const view = new PlayerUI(p, isLocal);
+                const view = new PlayerView(p, isLocal);
                 this.playerViews.set(p.id, view);
                 this.stage.addChild(view);
             }
@@ -191,10 +191,10 @@ export async function startGameUI(player: Player, sessionId: string, ws: WebSock
     const doc: any = (globalThis as any).document;
     if (!win || !doc) {
         // In non-browser (tests, CLI), do nothing but return a constructible UI
-        return new GameUI();
+        return new GameView();
     }
 
-    return new GameUI({
+    return new GameView({
         parent: container ?? doc.body,
         sessionId,
         player,

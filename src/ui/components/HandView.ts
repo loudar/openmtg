@@ -1,5 +1,5 @@
 import {Container} from "pixi.js";
-import {CardUI} from "./CardUI.ts";
+import {CardView} from "./CardView.ts";
 import type {ScryfallCard} from "../../models/Scryfall.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
 
@@ -72,7 +72,7 @@ export class HandView extends Container {
     }
 
     private buildCardNode(card: ScryfallCard): Container {
-        const node = new CardUI(card, this.cardWidth, this.cardHeight, this.faceDown);
+        const node = new CardView(card, this.cardWidth, this.cardHeight, this.faceDown);
 
         // Interactions for hover
         node.eventMode = "dynamic";
