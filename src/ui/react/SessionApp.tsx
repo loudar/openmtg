@@ -1,5 +1,5 @@
 /* eslint-env browser */
-import React, {useCallback, useMemo, useState} from "react";
+import React, {useCallback, useState} from "react";
 import {createSession, joinSession, connectSessionWS} from "../../client/sessionClient.ts";
 import {startGameUI} from "../GameUI.ts";
 import type {Player} from "../../server/sessionTypes.ts";

@@ -1,11 +1,10 @@
-import {Container, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js";
-import type { Card } from "mtggraphql";
-import type {MtgCard} from "../models/MTG.ts";
+import {Assets, Container, Graphics, Sprite, Text, Texture} from "pixi.js";
+import type {ScryfallCard} from "../models/Scryfall.ts";
 
 // CardUI is responsible for rendering a single card (face-up or face-down)
 // Width/height are fixed per instance; callers position/scale externally as needed.
 export class CardUI extends Container {
-    private card?: MtgCard;
+    private card?: ScryfallCard;
     private faceDown: boolean = false;
     private readonly w: number;
     private readonly h: number;
@@ -14,18 +13,28 @@ export class CardUI extends Container {
     private sprite?: Sprite;
     private nameText?: Text;
 
-    constructor(card?: MtgCard, width: number = 80, height: number = 110, faceDown: boolean = false) {
+    constructor(card?: ScryfallCard, width: number = 80, height: number = 110, faceDown: boolean = false) {
         super();
         this.w = width;
         this.h = height;
+        this.faceDown = faceDown;
+
         if (card) {
             this.card = card;
+            this.init().then();
+        } else {
+            this.redraw();
         }
-        this.faceDown = faceDown;
+    }
+
+    private async init(): Promise<void> {
+        if (this.card?.image_uris.normal) {
+            await Assets.load(this.card?.image_uris.normal);
+        }
         this.redraw();
     }
 
-    public setCard(card?: Card) {
+    public setCard(card?: ScryfallCard) {
         this.card = card;
         this.redraw();
     }
@@ -88,9 +97,8 @@ export class CardUI extends Container {
         }
 
         // Face-up: show simple name text placeholder (no image yet)
-        if (this.card?.imageUrl) {
-            console.log(this.card?.imageUrl);
-            const tex = Texture.from(this.card.imageUrl);
+        if (this.card?.image_uris) {
+            const tex = Texture.from(this.card.image_uris.normal);
             const spr = new Sprite(tex);
             spr.width = this.w;
             spr.height = this.h;
@@ -100,13 +108,13 @@ export class CardUI extends Container {
             this.addChild(spr);
         }
 
-        const name = this.card?.name || "Card";
-        const text = new Text({
-            text: name,
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
-        });
-        text.position.set(4, 4);
-        this.addChild(text);
-        this.nameText = text;
+        // const name = this.card?.name || "Card";
+        // const text = new Text({
+        //     text: name,
+        //     style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
+        // });
+        // text.position.set(4, 4);
+        // this.addChild(text);
+        // this.nameText = text;
     }
 }

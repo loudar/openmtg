@@ -1,6 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { CardUI } from "./CardUI.ts";
-import type {MtgCard} from "../models/MTG.ts";
+import type {ScryfallCard} from "../models/Scryfall.ts";
+import {cardSize} from "./globals.ts";
 
 export type StackType = "library" | "graveyard" | "exile";
 
@@ -10,10 +11,10 @@ export class StackView extends Container {
     private readonly countText: Text;
     private readonly labelText: Text;
     private readonly type: StackType;
-    private cards: MtgCard[] = [];
+    private cards: ScryfallCard[] = [];
     private faceDown: boolean = false;
 
-    constructor(type: StackType, cards?: MtgCard[]) {
+    constructor(type: StackType, cards?: ScryfallCard[]) {
         super();
         this.eventMode = "static";
         this.cursor = "pointer";
@@ -46,17 +47,17 @@ export class StackView extends Container {
         this.redraw();
     }
 
-    setCards(cards: MtgCard[]) {
+    setCards(cards: ScryfallCard[]) {
         this.cards = [...cards];
         this.redraw();
     }
 
-    addCard(card: MtgCard) {
+    addCard(card: ScryfallCard) {
         this.cards.push(card);
         this.redraw();
     }
 
-    public drawTop(): MtgCard | undefined {
+    public drawTop(): ScryfallCard | undefined {
         if (this.cards.length === 0) {
             return undefined;
         }
@@ -65,7 +66,7 @@ export class StackView extends Container {
         return c;
     }
 
-    public drawCount(count: number): MtgCard[] | undefined {
+    public drawCount(count: number): ScryfallCard[] | undefined {
         if (this.cards.length === 0) {
             return undefined;
         }
@@ -100,8 +101,8 @@ export class StackView extends Container {
         this.content.removeChildren();
         this.frame.clear();
 
-        const w = 80;
-        const h = 110;
+        const w = 80 * cardSize;
+        const h = 110 * cardSize;
 
         // Face-down rendering using CardUI when requested
         if (this.faceDown) {

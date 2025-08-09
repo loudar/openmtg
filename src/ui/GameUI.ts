@@ -3,6 +3,7 @@ import {CounterButton} from "./CounterButton.ts";
 import {PlayerUI} from "./PlayerUI.ts";
 import {getSessionPublic} from "../client/sessionClient.ts";
 import type {Player} from "../server/sessionTypes.ts";
+import axios from "axios";
 
 export class GameUI {
     public app!: Application;
@@ -82,7 +83,7 @@ export class GameUI {
             }
 
             // Build initial player views
-            this.rebuildPlayerViews();
+            await this.rebuildPlayerViews();
             this.layoutPlayers();
 
             // Subscribe to WS for player join/left
@@ -97,7 +98,7 @@ export class GameUI {
         });
     }
 
-    private onWSMessage(ev: MessageEvent) {
+    private async onWSMessage(ev: MessageEvent) {
         let data: any;
         try {
             data = JSON.parse(ev.data as any);
@@ -109,7 +110,7 @@ export class GameUI {
             const p = data.payload?.player as Player;
             if (p && !this.players.find(x => x.id === p.id)) {
                 this.players.push(p);
-                this.rebuildPlayerViews();
+                await this.rebuildPlayerViews();
                 this.layoutPlayers();
             }
             return;
@@ -132,7 +133,7 @@ export class GameUI {
         }
     }
 
-    private rebuildPlayerViews() {
+    private async rebuildPlayerViews() {
         if (!this.stage) {
             return;
         }

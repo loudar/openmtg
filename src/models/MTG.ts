@@ -1,4 +1,4 @@
-import type {Card} from "mtggraphql";
+import type {ScryfallCard} from "./Scryfall.ts";
 
 export enum CardTypes {
     Artifact = "Artifact",
@@ -113,9 +113,9 @@ export interface CanHaveErrors {
 }
 
 export interface Deck extends CanHaveErrors {
-    cards: MtgCard[];
-    commander?: MtgCard;
-    tokens?: MtgCard[];
+    cards: ScryfallCard[];
+    commander?: ScryfallCard;
+    tokens?: ScryfallCard[];
     cardBackImageUrl?: string;
 }
 
@@ -132,8 +132,4 @@ export interface CardLine {
 export interface DeckImport {
     importInput: string;
     cardBackImageUrl?: string;
-}
-
-export interface MtgCard extends Card {
-    imageUrl?: string;
 }

@@ -1,6 +1,6 @@
 import type {CardLine, Deck} from "../models/MTG.ts";
-import {MtgApi} from "./MtgApi.ts";
 import {cardLine} from "./Converters.ts";
+import {ScryfallApi} from "./ScryfallApi.ts";
 
 export class DeckDownloader {
     static async getFromDeckUrl(deckUrl: string): Promise<Deck> {
@@ -10,7 +10,7 @@ export class DeckDownloader {
     }
 
     static async getFromCardList(cardLines: CardLine[]): Promise<Deck> {
-        const mtgCards = await MtgApi.getCardsByNames(cardLines.map(card => card.name));
+        const mtgCards = await ScryfallApi.getCardsByNames(cardLines.map(card => card.name));
 
         const cards = [];
         for (const line of cardLines) {

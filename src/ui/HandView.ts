@@ -1,20 +1,21 @@
 import { Container } from "pixi.js";
 import { CardUI } from "./CardUI.ts";
-import type {MtgCard} from "../models/MTG.ts";
+import type {ScryfallCard} from "../models/Scryfall.ts";
+import {cardSize} from "./globals.ts";
 
 export class HandView extends Container {
-    private cards: MtgCard[] = [];
+    private cards: ScryfallCard[] = [];
     private faceDown: boolean = false;
-    private cardWidth: number = 80;
-    private cardHeight: number = 110;
+    private cardWidth: number = 80 * cardSize;
+    private cardHeight: number = 110 * cardSize;
     private defaultGap: number = 8;
     private minSpacing: number = 12; // minimal spacing between cards when heavily overlapped
-    private maxWidth: number = 600;
+    private maxWidth: number = window.innerWidth;
 
     private basePositions: number[] = [];
     private cardNodes: Container[] = [];
 
-    constructor(cards?: MtgCard[]) {
+    constructor(cards?: ScryfallCard[]) {
         super();
         this.eventMode = "static";
         this.cursor = "default";
@@ -24,12 +25,12 @@ export class HandView extends Container {
         this.redraw();
     }
 
-    public setCards(names: MtgCard[]) {
+    public setCards(names: ScryfallCard[]) {
         this.cards = [...names];
         this.redraw();
     }
 
-    public addCards(cards: MtgCard[]) {
+    public addCards(cards: ScryfallCard[]) {
         this.cards.push(...cards);
         this.redraw();
     }
@@ -58,7 +59,7 @@ export class HandView extends Container {
         this.cardNodes = [];
     }
 
-    private buildCardNode(card: MtgCard): Container {
+    private buildCardNode(card: ScryfallCard): Container {
         const node = new CardUI(card, this.cardWidth, this.cardHeight, this.faceDown);
 
         // Interactions for hover
