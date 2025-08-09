@@ -1,7 +1,8 @@
 import { Container, Graphics, Text, TextStyle, Sprite, Texture } from "pixi.js";
+import type {Card} from "mtggraphql";
 
 export class HandView extends Container {
-    private cards: string[] = [];
+    private cards: Card[] = [];
     private faceDown: boolean = false;
     private cardWidth: number = 80;
     private cardHeight: number = 110;
@@ -12,7 +13,7 @@ export class HandView extends Container {
     private basePositions: number[] = [];
     private cardNodes: Container[] = [];
 
-    constructor(cards?: string[]) {
+    constructor(cards?: Card[]) {
         super();
         this.eventMode = "static";
         this.cursor = "default";
@@ -22,13 +23,13 @@ export class HandView extends Container {
         this.redraw();
     }
 
-    public setCards(names: string[]) {
+    public setCards(names: Card[]) {
         this.cards = [...names];
         this.redraw();
     }
 
-    public addCard(name: string) {
-        this.cards.push(name);
+    public addCards(cards: Card[]) {
+        this.cards.push(...cards);
         this.redraw();
     }
 
@@ -56,7 +57,7 @@ export class HandView extends Container {
         this.cardNodes = [];
     }
 
-    private buildCardNode(label: string): Container {
+    private buildCardNode(card: Card): Container {
         const node = new Container();
         const g = new Graphics();
         g.roundRect(0, 0, this.cardWidth, this.cardHeight, 6)
@@ -79,7 +80,7 @@ export class HandView extends Container {
             }
         } else {
             const text = new Text({
-                text: label || "Card",
+                text: card.name || "Card",
                 style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.cardWidth - 8 })
             });
             text.position.set(4, 4);
@@ -104,9 +105,8 @@ export class HandView extends Container {
 
     private redraw() {
         this.clearCards();
-        // Build nodes for each card
         for (let i = 0; i < this.cards.length; i++) {
-            const node = this.buildCardNode(this.cards[i] ?? "");
+            const node = this.buildCardNode(this.cards[i]!);
             node.zIndex = i; // ensure natural stacking to the right
             this.addChild(node);
             this.cardNodes.push(node);

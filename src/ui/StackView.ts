@@ -56,6 +56,25 @@ export class StackView extends Container {
         this.redraw();
     }
 
+    public drawTop(): Card | undefined {
+        if (this.cards.length === 0) {
+            return undefined;
+        }
+        const c = this.cards.pop();
+        this.redraw();
+        return c;
+    }
+
+    public drawCount(count: number): Card[] | undefined {
+        if (this.cards.length === 0) {
+            return undefined;
+        }
+
+        const c = this.cards.splice(this.cards.length - count - 1, count);
+        this.redraw();
+        return c;
+    }
+
     setFaceDown(v: boolean) {
         this.faceDown = v;
         this.redraw();

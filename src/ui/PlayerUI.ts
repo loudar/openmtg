@@ -38,6 +38,23 @@ export class PlayerUI extends Container {
         this.library.position.set(-140, -60);
         this.addChild(this.library);
 
+        // Interaction: left-click your own library to draw the top card to hand
+        this.library.on("pointerdown", (e: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+
+            const isLeftClick = typeof e?.button === "number" ? e.button === 0 : true;
+            if (!isLeftClick) {
+                return;
+            }
+
+            const drawn = this.library.drawCount(1);
+            if (drawn && this.hand) {
+                this.hand.addCards(drawn);
+            }
+        });
+
         this.graveyard = new StackView("graveyard", []);
         this.graveyard.position.set(-40, -60);
         this.addChild(this.graveyard);
