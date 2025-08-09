@@ -1,4 +1,4 @@
-import {Container, Text, TextStyle} from "pixi.js";
+import {Container, Point, Text, TextStyle} from "pixi.js";
 import {StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
@@ -29,7 +29,12 @@ export class PlayerUI extends Container {
 
         const nameText = new Text({
             text: info.name + (isSelf ? " (You)" : ""),
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 14, fill: 0xdddddd })
+            style: new TextStyle({
+                fontFamily: "Arial",
+                fontSize: 14,
+                fill: 0xffffff,
+                align: "left",
+            }),
         });
         nameText.anchor.set(0.5);
         nameText.position.set(0, -90);
@@ -96,16 +101,23 @@ export class PlayerUI extends Container {
     private applyScaledLayout() {
         const scale = getCardSize();
         const yStacks = -60 * scale;
-        this.nameLabel.y = -90 * scale;
+        const width = window.innerWidth;
+        const left = -width / 2;
 
-        this.library.position.set(-140 * scale, yStacks);
-        this.graveyard.position.set(-40 * scale, yStacks);
-        this.exile.position.set(60 * scale, yStacks);
+        const topRowY = -110 * scale;
+        this.nameLabel.position.set(left + 200, topRowY + 30);
+
+        const stacksLeft = left + 10;
+        const dist = 100 * scale;
+        this.library.position.set(stacksLeft, yStacks);
+        this.graveyard.position.set(stacksLeft + dist, yStacks);
+        this.exile.position.set(stacksLeft + (dist * 2), yStacks);
+
         if (this.hand) {
-            this.hand.position.set(160 * scale, yStacks);
+            this.hand.position.set(stacksLeft + (dist * 3), yStacks);
         }
         // Life counter placed below stacks, centered under name
-        this.lifeCounter.position.set(0, 70 * scale);
+        this.lifeCounter.position.set(left + 30, topRowY);
     }
 
     public override destroy(options?: any): void {
