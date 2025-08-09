@@ -1,6 +1,6 @@
 /* eslint-env browser */
-import React, {useCallback, useState} from "react";
-import {createSession, joinSession, connectSessionWS} from "../../client/sessionClient.ts";
+import React, {useCallback, useEffect, useRef, useState} from "react";
+import {createSession, joinSession, connectSessionWS, getSessionPublic} from "../../client/sessionClient.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {startGameUI} from "../components/GameView.ts";
 
@@ -11,7 +11,29 @@ export function SessionApp() {
     const [status, setStatus] = useState<string>("");
     const [busy, setBusy] = useState(false);
 
+    // Track if we detected a sessionId from URL and intend to auto-join when possible
+    const autoJoinSidRef = useRef<string | null>(null);
+
+    const setUrlSessionParam = useCallback((sid: string | null) => {
+        // Keep current path and other params, just set or delete sessionId
+        try {
+            const url = new URL(window.location.href);
+            if (sid) {
+                url.searchParams.set("sessionId", sid);
+            } else {
+                url.searchParams.delete("sessionId");
+            }
+            window.history.replaceState({}, "", url);
+        } catch (e) {
+            // ignore URL update failures
+            console.warn("Failed to update URL:", e);
+        }
+    }, []);
+
     const handleAfterJoin = useCallback(async (sid: string, player: Player) => {
+        // Reflect joined/created session in the URL
+        setUrlSessionParam(sid);
+
         const ws = connectSessionWS(sid, player.id);
         ws.addEventListener("open", async () => {
             setStatus(`Joined session ${sid} as ${player.name}`);
@@ -41,6 +63,7 @@ export function SessionApp() {
         setStatus("Creating session...");
         try {
             const res = await createSession(finalName, deckInput);
+            // URL will be updated in handleAfterJoin
             await handleAfterJoin(res.sessionId, res.player);
         } catch (e) {
             setStatus(`Create failed: ${(e as Error).message}`);
@@ -64,6 +87,7 @@ export function SessionApp() {
         setStatus(`Joining session ${sid}...`);
         try {
             const res = await joinSession(sid, finalName, deckInput);
+            // URL will be updated in handleAfterJoin
             await handleAfterJoin(res.sessionId, res.player);
         } catch (e) {
             setStatus(`Join failed: ${(e as Error).message}`);
@@ -71,6 +95,49 @@ export function SessionApp() {
             setBusy(false);
         }
     }, [sessionId, name, deckInput, handleAfterJoin]);
+
+    // On initial load, check URL for sessionId and validate it.
+    useEffect(() => {
+        try {
+            const url = new URL(window.location.href);
+            const sid = url.searchParams.get("sessionId");
+            if (sid) {
+                // Validate session asynchronously
+                (async () => {
+                    try {
+                        const pub = await getSessionPublic(sid);
+                        if (pub && pub.id === sid) {
+                            setSessionId(sid);
+                            setStatus(`Found session ${sid}. Enter your name and deck to join, or paste deck to auto-join.`);
+                            autoJoinSidRef.current = sid;
+                        }
+                    } catch (e) {
+                        // If invalid, clear param from URL to avoid confusion
+                        setStatus(`Session ${sid} not found or unavailable.`);
+                        setUrlSessionParam(null);
+                        autoJoinSidRef.current = null;
+                    }
+                })();
+            }
+        } catch (e) {
+            // ignore URL parse errors
+        }
+        // no dependencies: run once
+    }, [setUrlSessionParam]);
+
+    // If we have a pending auto-join sid and the user supplied a deck, auto-join.
+    useEffect(() => {
+        if (autoJoinSidRef.current && deckInput && !busy) {
+            if (!sessionId) {
+                setSessionId(autoJoinSidRef.current);
+            }
+            // Trigger join
+            (async () => {
+                await onJoin();
+                autoJoinSidRef.current = null;
+            })();
+        }
+    }, [deckInput, busy, sessionId, onJoin]);
 
     return (
         <div style={{padding: 16, maxWidth: 720, margin: "0 auto"}}>
