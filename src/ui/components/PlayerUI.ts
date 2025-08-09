@@ -1,9 +1,9 @@
 import {Container, Text, TextStyle} from "pixi.js";
 import {StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
-import type {Player} from "../server/sessionTypes.ts";
-import {getCardSize, onCardSizeChange} from "./globals.ts";
 import {CounterButton} from "./CounterButton.ts";
+import type {Player} from "../../server/sessionTypes.ts";
+import {getCardSize, onCardSizeChange} from "../globals.ts";
 
 export class PlayerUI extends Container {
     public setMaxHandWidth(width: number) {
@@ -94,8 +94,7 @@ export class PlayerUI extends Container {
     }
 
     private applyScaledLayout() {
-        const scale = getCardSize(); // baseline was tuned for cardSize=2
-        // Base positions originally: name y=-90; stacks y=-60; x: library=-140, grave=-40, exile=60, hand=160; life at ~ (0, 70)
+        const scale = getCardSize();
         const yStacks = -60 * scale;
         this.nameLabel.y = -90 * scale;
 

@@ -1,7 +1,7 @@
 import {Application, Container, Assets} from "pixi.js";
 import {PlayerUI} from "./PlayerUI.ts";
-import {getSessionPublic} from "../client/sessionClient.ts";
-import type {Player} from "../server/sessionTypes.ts";
+import type {Player} from "../../server/sessionTypes.ts";
+import {getSessionPublic} from "../../client/sessionClient.ts";
 
 export class GameUI {
     public app!: Application;
@@ -16,7 +16,6 @@ export class GameUI {
 
     // layout
     private rotationOffset: number = 0; // radians, clockwise; 0 means self at bottom
-
 
     constructor(options?: {
         ws: WebSocket;

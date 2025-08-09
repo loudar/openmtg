@@ -1,8 +1,8 @@
 /* eslint-env browser */
 import React, {useCallback, useState} from "react";
 import {createSession, joinSession, connectSessionWS} from "../../client/sessionClient.ts";
-import {startGameUI} from "../GameUI.ts";
 import type {Player} from "../../server/sessionTypes.ts";
+import {startGameUI} from "../components/GameUI.ts";
 
 export function SessionApp() {
     const [name, setName] = useState("");

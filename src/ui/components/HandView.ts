@@ -1,7 +1,7 @@
-import { Container } from "pixi.js";
-import { CardUI } from "./CardUI.ts";
-import type {ScryfallCard} from "../models/Scryfall.ts";
-import {getCardSize, onCardSizeChange} from "./globals.ts";
+import {Container} from "pixi.js";
+import {CardUI} from "./CardUI.ts";
+import type {ScryfallCard} from "../../models/Scryfall.ts";
+import {getCardSize, onCardSizeChange} from "../globals.ts";
 
 export class HandView extends Container {
     private cards: ScryfallCard[] = [];
@@ -14,8 +14,13 @@ export class HandView extends Container {
     private cardNodes: Container[] = [];
     private unsubscribeCardSize?: () => void;
 
-    private get cardWidth(): number { return 80 * getCardSize(); }
-    private get cardHeight(): number { return 110 * getCardSize(); }
+    private get cardWidth(): number {
+        return 80 * getCardSize();
+    }
+
+    private get cardHeight(): number {
+        return 110 * getCardSize();
+    }
 
     constructor(cards?: ScryfallCard[]) {
         super();
@@ -61,7 +66,7 @@ export class HandView extends Container {
             node.removeAllListeners();
             this.removeChild(node);
             // Destroy graphics inside but keep textures cached
-            node.destroy({ children: true, texture: false });
+            node.destroy({children: true, texture: false});
         }
         this.cardNodes = [];
     }
@@ -177,6 +182,7 @@ export class HandView extends Container {
         this.cardNodes[i]!.zIndex = n + 1;
         this.sortChildren();
     }
+
     public override destroy(options?: any): void {
         if (this.unsubscribeCardSize) {
             try {

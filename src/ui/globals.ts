@@ -28,6 +28,3 @@ export function onCardSizeChange(listener: (v: number) => void): () => void {
         }
     };
 }
-
-// Keep backward compatibility with previous named export usage
-export const cardSize = (_cardSize as unknown) as number;

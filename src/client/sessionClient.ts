@@ -1,14 +1,6 @@
 /* eslint-env browser */
-import axios from "axios";
 import type {CreateSessionRequest, JoinSessionRequest, Player, SessionResponse} from "../server/sessionTypes.ts";
-
-const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:3000";
-
-const api = axios.create({
-    baseURL: API_BASE,
-    headers: {"content-type": "application/json"},
-    withCredentials: false,
-});
+import {api, API_BASE} from "./api.ts";
 
 export async function createSession(name: string, deck: string): Promise<SessionResponse> {
     const {data} = await api.post<SessionResponse>(`/api/session`, {
