@@ -14,6 +14,8 @@ export function SessionApp() {
         const ws = connectSessionWS(sid, pid);
         ws.addEventListener("open", async () => {
             setStatus(`Joined session ${sid} as ${playerName}`);
+            // Expose session info globally for the Pixi UI
+            (window as any).openmtg = { sessionId: sid, playerId: pid, name: playerName, ws };
             // Remove React root and start Pixi Game UI
             const rootEl = document.getElementById("root");
             if (rootEl && rootEl.parentElement) {
@@ -39,6 +41,7 @@ export function SessionApp() {
         setStatus("Creating session...");
         try {
             const res = await createSession(finalName, deckInput);
+            (window as any).openmtg = { ...(window as any).openmtg, localDeck: res.player.deck };
             await handleAfterJoin(res.sessionId, res.player.id, finalName);
         } catch (e) {
             setStatus(`Create failed: ${(e as Error).message}`);
@@ -62,6 +65,7 @@ export function SessionApp() {
         setStatus(`Joining session ${sid}...`);
         try {
             const res = await joinSession(sid, finalName, deckInput);
+            (window as any).openmtg = { ...(window as any).openmtg, localDeck: res.player.deck };
             await handleAfterJoin(res.sessionId, res.player.id, finalName);
         } catch (e) {
             setStatus(`Join failed: ${(e as Error).message}`);

@@ -1,6 +1,6 @@
-import {Container, Graphics, Text, TextStyle} from "pixi.js";
+import {Container, Graphics, Text, TextStyle, Sprite, Texture} from "pixi.js";
 
-export type StackType = "library" | "graveyard" | "exile";
+export type StackType = "library" | "graveyard" | "exile" | "hand";
 
 export class StackView extends Container {
     private frame: Graphics;
@@ -8,6 +8,8 @@ export class StackView extends Container {
     private labelText: Text;
     private cards: string[] = [];
     private type: StackType;
+    private faceDown: boolean = false;
+    private backSprite?: Sprite;
 
     constructor(type: StackType, cards?: string[]) {
         super();
@@ -48,6 +50,11 @@ export class StackView extends Container {
         this.redraw();
     }
 
+    setFaceDown(v: boolean) {
+        this.faceDown = v;
+        this.redraw();
+    }
+
     get size() {
         return this.cards.length;
     }
@@ -60,13 +67,43 @@ export class StackView extends Container {
                 return "Graveyard";
             case "exile":
                 return "Exile";
+            case "hand":
+                return "Hand";
         }
     }
 
     private redraw() {
+        // Clear previous graphics and sprite
+        this.frame.removeChildren();
         this.frame.clear();
+        if (this.backSprite) {
+            this.backSprite.destroy({ children: true, texture: false });
+            this.backSprite = undefined;
+        }
+
         const w = 80;
         const h = 110;
+
+        // Face-down rendering using card back image when requested
+        if (this.faceDown) {
+            try {
+                const tex = Texture.from("/img/cardBack.jpg");
+                const spr = new Sprite(tex);
+                spr.width = w;
+                spr.height = h;
+                spr.x = 0;
+                spr.y = 0;
+                this.backSprite = spr;
+                this.frame.addChild(spr);
+            } catch {
+                // fallback to solid placeholder if texture fails
+                const g = new Graphics();
+                g.roundRect(0, 0, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
+                this.frame.addChild(g);
+            }
+            this.countText.text = `${this.cards.length}`;
+            return;
+        }
 
         if (this.cards.length === 0) {
             // Draw dashed placeholder box

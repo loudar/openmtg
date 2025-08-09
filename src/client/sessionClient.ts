@@ -28,6 +28,17 @@ export async function joinSession(sessionId: string, name: string, deck: string)
     return data;
 }
 
+export interface PublicSessionResponse {
+    id: string;
+    createdAt: number;
+    players: { id: string; name: string; deckSize?: number }[];
+}
+
+export async function getSessionPublic(sessionId: string): Promise<PublicSessionResponse> {
+    const { data } = await api.get<PublicSessionResponse>(`/api/session`, { params: { id: sessionId } });
+    return data;
+}
+
 export function connectSessionWS(sessionId: string, playerId: string): WebSocket {
     const url = new URL(`${API_BASE}/ws`);
     url.protocol = url.protocol.replace("http", "ws");

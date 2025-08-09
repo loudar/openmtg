@@ -10,6 +10,7 @@ import {
     type SessionResponse
 } from "./server/sessionTypes.ts";
 import {DeckDownloader} from "./tools/DeckDownloader.ts";
+import * as path from "node:path";
 
 const PORT = 3000;
 
@@ -50,13 +51,17 @@ function publicSession(s: MtgSession) {
     return {
         id: s.id,
         createdAt: s.createdAt,
-        players: Array.from(s.players.values()).map((p) => ({ id: p.id, name: p.name })),
+        players: Array.from(s.players.values()).map((p) => ({ id: p.id, name: p.name, deckSize: p.deck?.cards?.length ?? 0 })),
     };
 }
 
 // Express app
 const app = express();
 app.use(express.json());
+
+// Serve static images from src/img at /img
+const IMG_DIR = path.resolve(process.cwd(), "src", "img");
+app.use("/img", express.static(IMG_DIR, { maxAge: "1d", etag: true }));
 
 // Simple CORS middleware to mirror previous behavior
 app.use((req, res, next) => {
@@ -107,7 +112,7 @@ app.post("/api/session/join", async (req, res) => {
     const response: SessionResponse = {sessionId: session.id, player};
 
     // Notify existing players via WS that a new player joined
-    const msg = JSON.stringify({type: "player:joined", payload: {player: {id: player.id, name: player.name}}});
+    const msg = JSON.stringify({type: "player:joined", payload: {player: {id: player.id, name: player.name, deckSize: player.deck?.cards?.length ?? 0}}});
     for (const ws of getOrCreateSocketSet(session.id)) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(msg);
