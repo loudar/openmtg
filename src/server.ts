@@ -71,43 +71,43 @@ app.use((req, res, next) => {
     next();
 });
 
-app.post("/api/session", (req, res) => {
+app.post("/api/session", async (req, res) => {
     const body = (req.body ?? null) as CreateSessionRequest | null;
 
     if (!body?.name) {
-        return res.status(400).json({ error: "Missing name" });
+        return res.status(400).json({error: "Missing name"});
     }
 
     if (!body?.deck) {
-        return res.status(400).json({ error: "Missing deck input" });
+        return res.status(400).json({error: "Missing deck input"});
     }
 
     const session = createSession();
     const player = await createPlayer(body.name, body.deck);
     session.players.set(player.id, player);
 
-    const response: SessionResponse = { sessionId: session.id, player };
+    const response: SessionResponse = {sessionId: session.id, player};
     return res.json(response);
 });
 
-app.post("/api/session/join", (req, res) => {
+app.post("/api/session/join", async (req, res) => {
     const body = (req.body ?? null) as JoinSessionRequest | null;
     if (!body || !body.sessionId || !body.name) {
-        return res.status(400).json({ error: "Missing sessionId or name" });
+        return res.status(400).json({error: "Missing sessionId or name"});
     }
 
     const session = sessions.get(body.sessionId);
     if (!session) {
-        return res.status(404).json({ error: "Session not found" });
+        return res.status(404).json({error: "Session not found"});
     }
 
     const player = await createPlayer(body.name, body.deck);
     session.players.set(player.id, player);
 
-    const response: SessionResponse = { sessionId: session.id, player };
+    const response: SessionResponse = {sessionId: session.id, player};
 
     // Notify existing players via WS that a new player joined
-    const msg = JSON.stringify({ type: "player:joined", payload: { player: { id: player.id, name: player.name } } });
+    const msg = JSON.stringify({type: "player:joined", payload: {player: {id: player.id, name: player.name}}});
     for (const ws of getOrCreateSocketSet(session.id)) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(msg);
