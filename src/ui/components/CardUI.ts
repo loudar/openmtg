@@ -1,5 +1,5 @@
-import {Assets, Container, Graphics, Sprite, Text, Texture} from "pixi.js";
-import type {ScryfallCard} from "../models/Scryfall.ts";
+import {Assets, Container, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js";
+import type {ScryfallCard} from "../../models/Scryfall.ts";
 
 // CardUI is responsible for rendering a single card (face-up or face-down)
 // Width/height are fixed per instance; callers position/scale externally as needed.
@@ -96,7 +96,6 @@ export class CardUI extends Container {
             return;
         }
 
-        // Face-up: show simple name text placeholder (no image yet)
         if (this.card?.image_uris) {
             const tex = Texture.from(this.card.image_uris.normal);
             const spr = new Sprite(tex);
@@ -106,15 +105,15 @@ export class CardUI extends Container {
             spr.y = 0;
             this.sprite = spr;
             this.addChild(spr);
+        } else {
+            const name = this.card?.name || "Card";
+            const text = new Text({
+                text: name,
+                style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
+            });
+            text.position.set(4, 4);
+            this.addChild(text);
+            this.nameText = text;
         }
-
-        // const name = this.card?.name || "Card";
-        // const text = new Text({
-        //     text: name,
-        //     style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
-        // });
-        // text.position.set(4, 4);
-        // this.addChild(text);
-        // this.nameText = text;
     }
 }
