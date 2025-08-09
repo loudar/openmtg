@@ -30,6 +30,10 @@ export class DeckDownloader {
     }
 
     static async getFromString(input: string): Promise<Deck> {
+        if (input.includes("http")) {
+            return await DeckDownloader.getFromDeckUrl(input);
+        }
+
         return await DeckDownloader.getFromCardList(input.split("\n").map(line => cardLine(line)));
     }
 }

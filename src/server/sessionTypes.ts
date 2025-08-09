@@ -14,13 +14,13 @@ export interface MtgSession {
 
 export interface CreateSessionRequest {
   name: string;
-  deck?: Deck;
+  deck: string;
 }
 
 export interface JoinSessionRequest {
   sessionId: string;
   name: string;
-  deck?: Deck;
+  deck: string;
 }
 
 export interface SessionResponse {

@@ -9,6 +9,7 @@ import {
     type JoinSessionRequest,
     type SessionResponse
 } from "./server/sessionTypes.ts";
+import {DeckDownloader} from "./tools/DeckDownloader.ts";
 
 const PORT = 3000;
 
@@ -24,8 +25,14 @@ function getOrCreateSocketSet(sessionId: string) {
     return set;
 }
 
-function createPlayer(name: string, deck?: Player["deck"]): Player {
-    return { id: crypto.randomUUID(), name, deck };
+async function createPlayer(name: string, deckInput: string): Promise<Player> {
+    const deck = await DeckDownloader.getFromString(deckInput);
+
+    return {
+        id: crypto.randomUUID(),
+        name,
+        deck
+    };
 }
 
 function createSession(): MtgSession {
@@ -66,10 +73,17 @@ app.use((req, res, next) => {
 
 app.post("/api/session", (req, res) => {
     const body = (req.body ?? null) as CreateSessionRequest | null;
-    if (!body || !body.name) return res.status(400).json({ error: "Missing name" });
+
+    if (!body?.name) {
+        return res.status(400).json({ error: "Missing name" });
+    }
+
+    if (!body?.deck) {
+        return res.status(400).json({ error: "Missing deck input" });
+    }
 
     const session = createSession();
-    const player = createPlayer(body.name, body.deck);
+    const player = await createPlayer(body.name, body.deck);
     session.players.set(player.id, player);
 
     const response: SessionResponse = { sessionId: session.id, player };
@@ -78,11 +92,16 @@ app.post("/api/session", (req, res) => {
 
 app.post("/api/session/join", (req, res) => {
     const body = (req.body ?? null) as JoinSessionRequest | null;
-    if (!body || !body.sessionId || !body.name) return res.status(400).json({ error: "Missing sessionId or name" });
-    const session = sessions.get(body.sessionId);
-    if (!session) return res.status(404).json({ error: "Session not found" });
+    if (!body || !body.sessionId || !body.name) {
+        return res.status(400).json({ error: "Missing sessionId or name" });
+    }
 
-    const player = createPlayer(body.name, body.deck);
+    const session = sessions.get(body.sessionId);
+    if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+    }
+
+    const player = await createPlayer(body.name, body.deck);
     session.players.set(player.id, player);
 
     const response: SessionResponse = { sessionId: session.id, player };

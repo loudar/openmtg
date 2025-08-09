@@ -1,23 +1,30 @@
 /* eslint-env browser */
 import axios from "axios";
-import type { Deck } from "../models/MTG.ts";
-import type { SessionResponse } from "../server/sessionTypes.ts";
+import type {Deck} from "../models/MTG.ts";
+import type {CreateSessionRequest, JoinSessionRequest, SessionResponse} from "../server/sessionTypes.ts";
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:3000";
 
 const api = axios.create({
     baseURL: API_BASE,
-    headers: { "content-type": "application/json" },
+    headers: {"content-type": "application/json"},
     withCredentials: false,
 });
 
-export async function createSession(name: string, deck?: Deck): Promise<SessionResponse> {
-    const { data } = await api.post<SessionResponse>(`/api/session`, { name, deck });
+export async function createSession(name: string, deck: string): Promise<SessionResponse> {
+    const {data} = await api.post<SessionResponse>(`/api/session`, {
+        name,
+        deck
+    } satisfies CreateSessionRequest);
     return data;
 }
 
-export async function joinSession(sessionId: string, name: string, deck?: Deck): Promise<SessionResponse> {
-    const { data } = await api.post<SessionResponse>(`/api/session/join`, { sessionId, name, deck });
+export async function joinSession(sessionId: string, name: string, deck: string): Promise<SessionResponse> {
+    const {data} = await api.post<SessionResponse>(`/api/session/join`, {
+        sessionId,
+        name,
+        deck
+    } satisfies JoinSessionRequest);
     return data;
 }
 

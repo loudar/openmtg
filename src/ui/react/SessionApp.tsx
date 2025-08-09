@@ -6,19 +6,9 @@ import {startGameUI} from "../GameUI.ts";
 export function SessionApp() {
     const [name, setName] = useState("");
     const [sessionId, setSessionId] = useState("");
-    const [deckJson, setDeckJson] = useState("");
+    const [deckInput, setDeckInput] = useState("");
     const [status, setStatus] = useState<string>("");
     const [busy, setBusy] = useState(false);
-
-    const parsedDeck = useMemo(() => {
-        const txt = deckJson.trim();
-        if (!txt) return undefined;
-        try {
-            return JSON.parse(txt);
-        } catch (e) {
-            return {__parseError: (e as Error).message} as any;
-        }
-    }, [deckJson]);
 
     const handleAfterJoin = useCallback(async (sid: string, pid: string, playerName: string) => {
         const ws = connectSessionWS(sid, pid);
@@ -41,21 +31,21 @@ export function SessionApp() {
 
     const onCreate = useCallback(async () => {
         const finalName = name.trim() || `Player-${Math.floor(Math.random() * 1000)}`;
-        if (parsedDeck && (parsedDeck as any).__parseError) {
-            setStatus(`Invalid deck JSON: ${(parsedDeck as any).__parseError}`);
+        if (!deckInput) {
+            setStatus(`Must provide a deck input`);
             return;
         }
         setBusy(true);
         setStatus("Creating session...");
         try {
-            const res = await createSession(finalName, parsedDeck as any);
+            const res = await createSession(finalName, deckInput);
             await handleAfterJoin(res.sessionId, res.player.id, finalName);
         } catch (e) {
             setStatus(`Create failed: ${(e as Error).message}`);
         } finally {
             setBusy(false);
         }
-    }, [name, parsedDeck, handleAfterJoin]);
+    }, [name, deckInput, handleAfterJoin]);
 
     const onJoin = useCallback(async () => {
         const sid = sessionId.trim();
@@ -64,21 +54,21 @@ export function SessionApp() {
             return;
         }
         const finalName = name.trim() || `Player-${Math.floor(Math.random() * 1000)}`;
-        if (parsedDeck && (parsedDeck as any).__parseError) {
-            setStatus(`Invalid deck JSON: ${(parsedDeck as any).__parseError}`);
+        if (!deckInput) {
+            setStatus(`Must provide a deck input`);
             return;
         }
         setBusy(true);
         setStatus(`Joining session ${sid}...`);
         try {
-            const res = await joinSession(sid, finalName, parsedDeck as any);
+            const res = await joinSession(sid, finalName, deckInput);
             await handleAfterJoin(res.sessionId, res.player.id, finalName);
         } catch (e) {
             setStatus(`Join failed: ${(e as Error).message}`);
         } finally {
             setBusy(false);
         }
-    }, [sessionId, name, parsedDeck, handleAfterJoin]);
+    }, [sessionId, name, deckInput, handleAfterJoin]);
 
     return (
         <div style={{padding: 16, maxWidth: 720, margin: "0 auto"}}>
@@ -107,8 +97,8 @@ export function SessionApp() {
             <textarea
                 placeholder="Paste deck URL or list of cards (1x card name etc.)"
                 rows={4}
-                value={deckJson}
-                onChange={(e) => setDeckJson(e.target.value)}
+                value={deckInput}
+                onChange={(e) => setDeckInput(e.target.value.trim())}
                 disabled={busy}
                 style={{display: "block", width: "100%", margin: "8px 0", padding: 6}}
             />
