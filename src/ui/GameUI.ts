@@ -1,13 +1,14 @@
 import {Application, Container} from "pixi.js";
-import {DeckView} from "./DeckView.ts";
-import {CardView} from "./CardView.ts";
-import {CounterView} from "./CounterView.ts";
+import {StackView} from "./StackView.ts";
+import {CounterButton} from "./CounterButton.ts";
 
 export class GameUI {
     public app: Application;
     public stage?: Container;
-    public deck?: DeckView;
-    public lifeCounter?: CounterView;
+    public library?: StackView;
+    public graveyard?: StackView;
+    public exile?: StackView;
+    public lifeCounter?: CounterButton;
 
     constructor(options?: {
         width?: number;
@@ -32,8 +33,8 @@ export class GameUI {
             // Allow zIndex sorting for dragging
             this.stage.sortableChildren = true;
 
-            // Deck
-            this.deck = new DeckView(options?.sampleCards ?? [
+            // Stacks at top-left: Library, Graveyard, Exile
+            const sample = options?.sampleCards ?? [
                 "Island",
                 "Mountain",
                 "Lightning Bolt",
@@ -41,23 +42,21 @@ export class GameUI {
                 "Forest",
                 "Swamp",
                 "Plains",
-            ]);
-            this.deck.position.set(40, 40);
-            this.stage.addChild(this.deck);
+            ];
+            this.library = new StackView("library", sample);
+            this.library.position.set(40, 40);
+            this.stage.addChild(this.library);
 
-            // Hand area basic layout when drawing
-            let nextHandX = 160;
-            const handY = height - 200;
+            this.graveyard = new StackView("graveyard", []);
+            this.graveyard.position.set(140, 40); // next to library
+            this.stage.addChild(this.graveyard);
 
-            this.deck.on("drawn", (cv: CardView) => {
-                cv.position.set(nextHandX, handY);
-                cv.zIndex = 100; // beneath dragging 9999
-                nextHandX += 130; // basic spacing
-                this.stage!.addChild(cv);
-            });
+            this.exile = new StackView("exile", []);
+            this.exile.position.set(240, 40); // next to graveyard
+            this.stage.addChild(this.exile);
 
-            // Life counter
-            this.lifeCounter = new CounterView({label: "Life", value: 20});
+            // Life counter using generic CounterButton with right-click/shift support
+            this.lifeCounter = new CounterButton({ value: 20, style: { label: "Life", fill: 0x1e1e1e, stroke: 0x444444 } });
             this.lifeCounter.position.set(width - 200, 40);
             this.stage.addChild(this.lifeCounter);
         });
