@@ -3,6 +3,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react";
 import {createSession, joinSession, connectSessionWS, getSessionPublic} from "../../client/sessionClient.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {startGameUI} from "../components/GameView.ts";
+import { getStoredPlayerId, setStoredPlayerId, clearStoredPlayerId } from "../../client/playerIdStore.ts";
 
 export function SessionApp() {
     const [name, setName] = useState("");
@@ -31,6 +32,13 @@ export function SessionApp() {
     }, []);
 
     const handleAfterJoin = useCallback(async (sid: string, player: Player) => {
+        // Persist playerId mapping for auto-rejoin later
+        try {
+            setStoredPlayerId(sid, player.id);
+        } catch {
+            // ignore storage errors
+        }
+
         // Reflect joined/created session in the URL
         setUrlSessionParam(sid);
 
@@ -51,7 +59,7 @@ export function SessionApp() {
         ws.addEventListener("close", () => {
             console.warn("WS closed");
         });
-    }, []);
+    }, [setUrlSessionParam]);
 
     const onCreate = useCallback(async () => {
         const finalName = name.trim() || `Player-${Math.floor(Math.random() * 1000)}`;
@@ -108,6 +116,31 @@ export function SessionApp() {
                         const pub = await getSessionPublic(sid);
                         if (pub && pub.id === sid) {
                             setSessionId(sid);
+
+                            // Attempt auto-reconnect using stored playerId
+                            const storedId = getStoredPlayerId(sid);
+                            if (storedId) {
+                                const existing = pub.players.find(p => p.id === storedId);
+                                if (existing) {
+                                    setStatus(`Rejoining session ${sid} as ${existing.name}...`);
+                                    const ws = connectSessionWS(sid, storedId);
+                                    ws.addEventListener("open", async () => {
+                                        const rootEl = document.getElementById("root");
+                                        if (rootEl && rootEl.parentElement) {
+                                            rootEl.parentElement.removeChild(rootEl);
+                                        }
+                                        await startGameUI(existing, sid, ws);
+                                    });
+                                    ws.addEventListener("close", () => {
+                                        console.warn("WS closed");
+                                    });
+                                    return; // do not set auto-join with deck; we're done
+                                } else {
+                                    // stale mapping: clear it
+                                    clearStoredPlayerId(sid);
+                                }
+                            }
+
                             setStatus(`Found session ${sid}. Enter your name and deck to join, or paste deck to auto-join.`);
                             autoJoinSidRef.current = sid;
                         }
