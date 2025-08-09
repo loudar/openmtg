@@ -1,9 +1,15 @@
 /* eslint-env browser */
 /* eslint-disable no-undef */
-import { renderSessionUI } from "./src/ui/SessionUI.ts";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { SessionApp } from "./src/ui/react/SessionApp.tsx";
 
 const win: any = window;
 const doc: any = document;
 if (win && doc) {
-    renderSessionUI(doc.body);
+    const rootEl = doc.createElement("div");
+    rootEl.id = "root";
+    doc.body.appendChild(rootEl);
+    const root = createRoot(rootEl);
+    root.render(React.createElement(SessionApp));
 }

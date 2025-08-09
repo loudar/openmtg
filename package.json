@@ -9,13 +9,15 @@
     "preview": "bunx vite preview",
     "start": "bun run dev",
     "server": "bun run src/server.ts",
-    "server-dev": "bun run src/server.ts --watch",
+    "server-dev": "bun run --watch src/server.ts",
     "lint": "bunx eslint . --ext .ts,.js",
     "lint:fix": "bunx eslint . --ext .ts,.js --fix"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
     "@types/bun": "latest",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
     "eslint": "^9.33.0"
@@ -27,6 +29,8 @@
     "axios": "^1.11.0",
     "mtggraphql": "^1.0.2",
     "pixi.js": "^8.3.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "vite": "^7.1.1",
     "vitest": "^3.2.4"
   }

@@ -25,8 +25,9 @@ function jsonResponse(data: unknown, init?: ResponseInit) {
     return new Response(JSON.stringify(data), {
         headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
+            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Allow": "GET, POST, PUT, DELETE, OPTIONS"
         },
         ...init,
     });
