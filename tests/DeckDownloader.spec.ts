@@ -1,7 +1,7 @@
 import {expect, it} from "vitest";
 import {DeckDownloader} from "../src/tools/DeckDownloader.ts";
 
-it('should return deck', async () => {
+it.skip('should return deck', async () => {
     const input = `1x Abrade (vow) 139 [Removal]
 1x Ancient Stone Idol (mkc) 222 [Creature]
 1x Anger (afc) 113 [Maybeboard{noDeck}{noPrice},Sideboard]

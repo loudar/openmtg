@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="description" content="OpenMTG - Pixi.js MTG UI prototype"/>
+    <title>OpenMTG</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: #0a0a0a;
+            color: #eaeaea;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Ensure canvas fills initial viewport nicely */
+        canvas {
+            display: block;
+            outline: none;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+<h1 class="sr-only">OpenMTG</h1>
+<script type="module">
+    // Importing the module will auto-start the UI in browser context
+    import "./index.ts";
+</script>
+</body>
+</html>

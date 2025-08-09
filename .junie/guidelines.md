@@ -1,0 +1,5 @@
+- Always use `bun` instead of `npm` or `node`
+- Always use Pixie.js for rendering
+- Separate code into either of the two:
+  - Classes when it makes sense (one file per class)
+  - Exported functions (export function xxx etc.) (multiple functions regarding similar concerns per file)
