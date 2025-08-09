@@ -5,6 +5,7 @@ export type StackType = "library" | "graveyard" | "exile";
 
 export class StackView extends Container {
     private readonly frame: Graphics;
+    private readonly content: Container;
     private readonly countText: Text;
     private readonly labelText: Text;
     private readonly type: StackType;
@@ -20,6 +21,8 @@ export class StackView extends Container {
 
         this.frame = new Graphics();
         this.addChild(this.frame);
+        this.content = new Container();
+        this.addChild(this.content);
 
         this.labelText = new Text({
             text: this.typeLabel(),
@@ -75,7 +78,7 @@ export class StackView extends Container {
 
     private redraw() {
         // Clear previous graphics and sprite
-        this.frame.removeChildren();
+        this.content.removeChildren();
         this.frame.clear();
         if (this.backSprite) {
             this.backSprite.destroy({children: true, texture: false});
@@ -95,12 +98,12 @@ export class StackView extends Container {
                 spr.x = 0;
                 spr.y = 0;
                 this.backSprite = spr;
-                this.frame.addChild(spr);
+                this.content.addChild(spr);
             } catch {
                 // fallback to solid placeholder if texture fails
                 const g = new Graphics();
                 g.roundRect(0, 0, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
-                this.frame.addChild(g);
+                this.content.addChild(g);
             }
             this.countText.text = `${this.cards.length}`;
             return;
@@ -116,13 +119,13 @@ export class StackView extends Container {
                 for (let i = 0; i < 3; i++) {
                     const g = new Graphics();
                     g.roundRect(i * 2, i * 2, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
-                    this.frame.addChild(g);
+                    this.content.addChild(g);
                 }
             } else {
                 // single pile look (face-up pile placeholder)
                 const g = new Graphics();
                 g.roundRect(0, 0, w, h, 6).fill(0x2e2e2e).stroke({color: 0x555555, width: 2});
-                this.frame.addChild(g);
+                this.content.addChild(g);
             }
             this.countText.text = `${this.cards.length}`;
         }
@@ -149,7 +152,7 @@ export class StackView extends Container {
                 const ey = y1 + dy * (drawn + seg);
                 const g = new Graphics();
                 g.moveTo(sx, sy).lineTo(ex, ey).stroke({color, width});
-                this.frame.addChild(g);
+                this.content.addChild(g);
                 drawn += dash + gap;
             }
         };
@@ -170,7 +173,7 @@ export class StackView extends Container {
                 const ey = cy + Math.sin(a2) * r;
                 const g = new Graphics();
                 g.moveTo(sx, sy).lineTo(ex, ey).stroke({color, width});
-                this.frame.addChild(g);
+                this.content.addChild(g);
             }
         };
 

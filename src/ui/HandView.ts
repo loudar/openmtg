@@ -67,7 +67,7 @@ export class HandView extends Container {
 
         if (this.faceDown) {
             try {
-                const tex = Texture.from("/img/cardBack.jpg");
+                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
                 const spr = new Sprite(tex);
                 spr.width = this.cardWidth;
                 spr.height = this.cardHeight;

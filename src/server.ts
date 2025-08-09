@@ -59,9 +59,16 @@ function publicSession(s: MtgSession) {
 const app = express();
 app.use(express.json());
 
-// Serve static images from src/img at /img
+// Serve static images from src/img at /img with CORS headers for cross-origin textures
 const IMG_DIR = path.resolve(process.cwd(), "src", "img");
-app.use("/img", express.static(IMG_DIR, {maxAge: "1d", etag: true}));
+app.use("/img", express.static(IMG_DIR, {
+    maxAge: "1d",
+    etag: true,
+    setHeaders: (res) => {
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    }
+}));
 
 // Simple CORS middleware to mirror previous behavior
 app.use((req, res, next) => {

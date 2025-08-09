@@ -1,4 +1,4 @@
-import {Application, Container} from "pixi.js";
+import {Application, Container, Assets} from "pixi.js";
 import {CounterButton} from "./CounterButton.ts";
 import {PlayerUI} from "./PlayerUI.ts";
 import {getSessionPublic} from "../client/sessionClient.ts";
@@ -73,6 +73,12 @@ export class GameUI {
                 } catch (e) {
                     console.warn("Failed to load session players:", e);
                 }
+            }
+
+            try {
+                await Assets.load("http://localhost:3000/img/cardBack.jpg");
+            } catch (e) {
+                console.warn("Failed to preload assets:", e);
             }
 
             // Build initial player views
