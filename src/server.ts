@@ -24,7 +24,9 @@ function getOrCreateSocketSet(sessionId: string) {
 function jsonResponse(data: unknown, init?: ResponseInit) {
     return new Response(JSON.stringify(data), {
         headers: {
-            "content-type": "application/json",
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
         },
         ...init,
     });
@@ -102,9 +104,15 @@ interface Session {
     playerId: string
 }
 
+const textDecoder = new TextDecoder();
+
 const server = Bun.serve<Session, any>({
     port: 3000,
     fetch(req, srv) {
+        if (req.method === "OPTIONS") {
+            return jsonResponse("OK");
+        }
+
         const url = new URL(req.url);
 
         if (url.pathname === "/api/session" && req.method === "POST") {
@@ -141,14 +149,13 @@ const server = Bun.serve<Session, any>({
             getOrCreateSocketSet(sessionId).delete(ws);
         },
         message(ws, message) {
-            // Broadcast incoming message to all peers in the same session
             const {sessionId, playerId} = ws.data as Session;
             let payload: string;
 
             if (typeof message === "string") {
                 payload = message;
-            } else if (message instanceof ArrayBuffer) {
-                payload = Bun.decodeUTF8(message);
+            } else if ([ArrayBuffer, Uint8Array].includes(message.constructor as any)) {
+                payload = textDecoder.decode(message);
             } else {
                 payload = String(message);
             }

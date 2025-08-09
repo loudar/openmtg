@@ -9,6 +9,7 @@ export async function createSession(name: string, deck?: Deck): Promise<SessionR
     const res = await fetch(`${API_BASE}/api/session`, {
         method: "POST",
         headers: { "content-type": "application/json" },
+        mode: "cors",
         body: JSON.stringify({ name, deck }),
     });
     if (!res.ok) throw new Error(`Create failed: ${res.status}`);
@@ -19,6 +20,7 @@ export async function joinSession(sessionId: string, name: string, deck?: Deck):
     const res = await fetch(`${API_BASE}/api/session/join`, {
         method: "POST",
         headers: { "content-type": "application/json" },
+        mode: "cors",
         body: JSON.stringify({ sessionId, name, deck }),
     });
     if (!res.ok) throw new Error(`Join failed: ${res.status}`);

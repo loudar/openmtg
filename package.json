@@ -9,6 +9,7 @@
     "preview": "bunx vite preview",
     "start": "bun run dev",
     "server": "bun run src/server.ts",
+    "server-dev": "bun run src/server.ts --watch",
     "lint": "bunx eslint . --ext .ts,.js",
     "lint:fix": "bunx eslint . --ext .ts,.js --fix"
   },
