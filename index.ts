@@ -1,5 +1,4 @@
 /* eslint-env browser */
-/* eslint-disable no-undef */
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { SessionApp } from "./src/ui/react/SessionApp.tsx";

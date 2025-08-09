@@ -1,5 +1,4 @@
 /* eslint-env node */
-/* eslint-disable no-undef */
 import express from "express";
 import { createServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";

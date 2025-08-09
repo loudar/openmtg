@@ -1,5 +1,4 @@
 /* eslint-env browser */
-/* eslint-disable no-undef */
 import axios from "axios";
 import type { Deck } from "../models/MTG.ts";
 import type { SessionResponse } from "../server/sessionTypes.ts";

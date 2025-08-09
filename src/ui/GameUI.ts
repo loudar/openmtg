@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import {Application, Container} from "pixi.js";
 import {DeckView} from "./DeckView.ts";
 import {CardView} from "./CardView.ts";
