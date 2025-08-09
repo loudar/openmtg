@@ -33,7 +33,6 @@ export class PlayerUI extends Container {
         this.addChild(nameText);
 
         // Build stacks. Library is face-down by default.
-        console.log("deck cards: ", info.deck?.cards);
         this.library = new StackView("library", info.deck?.cards ?? []);
         this.library.setFaceDown(true);
         this.library.position.set(-140, -60);

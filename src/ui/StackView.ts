@@ -1,14 +1,14 @@
 import {Container, Graphics, Text, TextStyle, Sprite, Texture} from "pixi.js";
 import type {Card} from "mtggraphql";
 
-export type StackType = "library" | "graveyard" | "exile" | "hand";
+export type StackType = "library" | "graveyard" | "exile";
 
 export class StackView extends Container {
-    private frame: Graphics;
-    private countText: Text;
-    private labelText: Text;
+    private readonly frame: Graphics;
+    private readonly countText: Text;
+    private readonly labelText: Text;
+    private readonly type: StackType;
     private cards: Card[] = [];
-    private type: StackType;
     private faceDown: boolean = false;
     private backSprite?: Sprite;
 
@@ -70,8 +70,6 @@ export class StackView extends Container {
                 return "Graveyard";
             case "exile":
                 return "Exile";
-            case "hand":
-                return "Hand";
         }
     }
 
