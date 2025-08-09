@@ -1,7 +1,9 @@
-import {startGameUI} from "./src/ui/GameUI.ts";
+/* eslint-env browser */
+/* eslint-disable no-undef */
+import { renderSessionUI } from "./src/ui/SessionUI.ts";
 
 const win: any = window;
 const doc: any = document;
 if (win && doc) {
-    await startGameUI();
+    renderSessionUI(doc.body);
 }

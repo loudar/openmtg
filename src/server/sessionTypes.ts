@@ -1,0 +1,29 @@
+import type { Deck } from "../models/MTG.ts";
+
+export interface Player {
+  id: string; // uuid v4
+  name: string;
+  deck?: Deck; // optional for join; can be set later
+}
+
+export interface MtgSession {
+  id: string; // uuid v4
+  createdAt: number;
+  players: Map<string, Player>;
+}
+
+export interface CreateSessionRequest {
+  name: string;
+  deck?: Deck;
+}
+
+export interface JoinSessionRequest {
+  sessionId: string;
+  name: string;
+  deck?: Deck;
+}
+
+export interface SessionResponse {
+  sessionId: string;
+  player: Player;
+}
