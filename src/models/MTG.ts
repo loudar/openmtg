@@ -113,9 +113,9 @@ export interface CanHaveErrors {
 }
 
 export interface Deck extends CanHaveErrors {
-    cards: Card[];
-    commander?: Card;
-    tokens?: Card[];
+    cards: MtgCard[];
+    commander?: MtgCard;
+    tokens?: MtgCard[];
     cardBackImageUrl?: string;
 }
 
@@ -132,4 +132,8 @@ export interface CardLine {
 export interface DeckImport {
     importInput: string;
     cardBackImageUrl?: string;
+}
+
+export interface MtgCard extends Card {
+    imageUrl?: string;
 }

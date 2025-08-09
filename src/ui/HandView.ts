@@ -1,8 +1,9 @@
-import { Container, Graphics, Text, TextStyle, Sprite, Texture } from "pixi.js";
-import type {Card} from "mtggraphql";
+import { Container } from "pixi.js";
+import { CardUI } from "./CardUI.ts";
+import type {MtgCard} from "../models/MTG.ts";
 
 export class HandView extends Container {
-    private cards: Card[] = [];
+    private cards: MtgCard[] = [];
     private faceDown: boolean = false;
     private cardWidth: number = 80;
     private cardHeight: number = 110;
@@ -13,7 +14,7 @@ export class HandView extends Container {
     private basePositions: number[] = [];
     private cardNodes: Container[] = [];
 
-    constructor(cards?: Card[]) {
+    constructor(cards?: MtgCard[]) {
         super();
         this.eventMode = "static";
         this.cursor = "default";
@@ -23,12 +24,12 @@ export class HandView extends Container {
         this.redraw();
     }
 
-    public setCards(names: Card[]) {
+    public setCards(names: MtgCard[]) {
         this.cards = [...names];
         this.redraw();
     }
 
-    public addCards(cards: Card[]) {
+    public addCards(cards: MtgCard[]) {
         this.cards.push(...cards);
         this.redraw();
     }
@@ -57,35 +58,8 @@ export class HandView extends Container {
         this.cardNodes = [];
     }
 
-    private buildCardNode(card: Card): Container {
-        const node = new Container();
-        const g = new Graphics();
-        g.roundRect(0, 0, this.cardWidth, this.cardHeight, 6)
-            .fill(this.faceDown ? 0x444444 : 0x2e2e2e)
-            .stroke({ color: this.faceDown ? 0x222222 : 0x555555, width: 2 });
-
-        node.addChild(g);
-
-        if (this.faceDown) {
-            try {
-                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
-                const spr = new Sprite(tex);
-                spr.width = this.cardWidth;
-                spr.height = this.cardHeight;
-                spr.x = 0;
-                spr.y = 0;
-                node.addChild(spr);
-            } catch {
-                // already drew placeholder g
-            }
-        } else {
-            const text = new Text({
-                text: card.name || "Card",
-                style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.cardWidth - 8 })
-            });
-            text.position.set(4, 4);
-            node.addChild(text);
-        }
+    private buildCardNode(card: MtgCard): Container {
+        const node = new CardUI(card, this.cardWidth, this.cardHeight, this.faceDown);
 
         // Interactions for hover
         node.eventMode = "dynamic";

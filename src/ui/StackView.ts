@@ -1,5 +1,6 @@
-import {Container, Graphics, Text, TextStyle, Sprite, Texture} from "pixi.js";
-import type {Card} from "mtggraphql";
+import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { CardUI } from "./CardUI.ts";
+import type {MtgCard} from "../models/MTG.ts";
 
 export type StackType = "library" | "graveyard" | "exile";
 
@@ -9,11 +10,10 @@ export class StackView extends Container {
     private readonly countText: Text;
     private readonly labelText: Text;
     private readonly type: StackType;
-    private cards: Card[] = [];
+    private cards: MtgCard[] = [];
     private faceDown: boolean = false;
-    private backSprite?: Sprite;
 
-    constructor(type: StackType, cards?: Card[]) {
+    constructor(type: StackType, cards?: MtgCard[]) {
         super();
         this.eventMode = "static";
         this.cursor = "pointer";
@@ -46,17 +46,17 @@ export class StackView extends Container {
         this.redraw();
     }
 
-    setCards(cards: Card[]) {
+    setCards(cards: MtgCard[]) {
         this.cards = [...cards];
         this.redraw();
     }
 
-    addCard(card: Card) {
+    addCard(card: MtgCard) {
         this.cards.push(card);
         this.redraw();
     }
 
-    public drawTop(): Card | undefined {
+    public drawTop(): MtgCard | undefined {
         if (this.cards.length === 0) {
             return undefined;
         }
@@ -65,7 +65,7 @@ export class StackView extends Container {
         return c;
     }
 
-    public drawCount(count: number): Card[] | undefined {
+    public drawCount(count: number): MtgCard[] | undefined {
         if (this.cards.length === 0) {
             return undefined;
         }
@@ -96,33 +96,25 @@ export class StackView extends Container {
     }
 
     private redraw() {
-        // Clear previous graphics and sprite
+        // Clear previous content and frame
         this.content.removeChildren();
         this.frame.clear();
-        if (this.backSprite) {
-            this.backSprite.destroy({children: true, texture: false});
-            this.backSprite = undefined;
-        }
 
         const w = 80;
         const h = 110;
 
-        // Face-down rendering using card back image when requested
+        // Face-down rendering using CardUI when requested
         if (this.faceDown) {
-            try {
-                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
-                const spr = new Sprite(tex);
-                spr.width = w;
-                spr.height = h;
-                spr.x = 0;
-                spr.y = 0;
-                this.backSprite = spr;
-                this.content.addChild(spr);
-            } catch {
-                // fallback to solid placeholder if texture fails
-                const g = new Graphics();
-                g.roundRect(0, 0, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
-                this.content.addChild(g);
+            if (this.type === "library") {
+                for (let i = 0; i < 3; i++) {
+                    const cardBack = new CardUI(undefined, w, h, true);
+                    cardBack.x = i * 2;
+                    cardBack.y = i * 2;
+                    this.content.addChild(cardBack);
+                }
+            } else {
+                const cardBack = new CardUI(undefined, w, h, true);
+                this.content.addChild(cardBack);
             }
             this.countText.text = `${this.cards.length}`;
             return;
@@ -133,19 +125,10 @@ export class StackView extends Container {
             this.drawDashedRoundedRect(0, 0, w, h, 6, 0x777777, 2, 6, 6);
             this.countText.text = "0";
         } else {
-            if (this.type === "library") {
-                // face-down stacked look
-                for (let i = 0; i < 3; i++) {
-                    const g = new Graphics();
-                    g.roundRect(i * 2, i * 2, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
-                    this.content.addChild(g);
-                }
-            } else {
-                // single pile look (face-up pile placeholder)
-                const g = new Graphics();
-                g.roundRect(0, 0, w, h, 6).fill(0x2e2e2e).stroke({color: 0x555555, width: 2});
-                this.content.addChild(g);
-            }
+            // Show the top card using CardUI
+            const top = this.cards[this.cards.length - 1];
+            const cardTop = new CardUI(top, w, h, false);
+            this.content.addChild(cardTop);
             this.countText.text = `${this.cards.length}`;
         }
     }

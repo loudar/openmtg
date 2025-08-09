@@ -1,8 +1,8 @@
 import axios from "axios";
-import type {Card} from "mtggraphql";
+import type {MtgCard} from "../models/MTG.ts";
 
 interface CardsResponse {
-    cards: Card[];
+    cards: MtgCard[];
 }
 
 const baseUrl = "https://api.magicthegathering.io/v1";
@@ -19,7 +19,7 @@ export class MtgApi {
         };
     }
 
-    static async getCardByName(name: string): Promise<Card | null> {
+    static async getCardByName(name: string): Promise<MtgCard | null> {
         const res = (await axios.get<CardsResponse>(`${baseUrl}/cards`, {
             params: {
                 name
@@ -27,9 +27,23 @@ export class MtgApi {
         }));
 
         if (res.data.cards.length > 0) {
-            return res.data.cards.at(0)!;
+            const card = res.data.cards.at(0)!;
+
+            if (card.imageUrl) {
+                card.imageUrl = await MtgApi.resolveFinalUrl(card.imageUrl);
+            }
+
+            return card;
         }
 
         return null;
+    }
+
+    static async resolveFinalUrl(startUrl: string) {
+        const res = await fetch(startUrl, { redirect: "follow" });
+        if (!res.ok && res.type !== "opaqueredirect") {
+            throw new Error(`Request failed: ${res.status}`);
+        }
+        return res.url;
     }
 }
