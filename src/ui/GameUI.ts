@@ -1,9 +1,7 @@
 import {Application, Container, Assets} from "pixi.js";
-import {CounterButton} from "./CounterButton.ts";
 import {PlayerUI} from "./PlayerUI.ts";
 import {getSessionPublic} from "../client/sessionClient.ts";
 import type {Player} from "../server/sessionTypes.ts";
-import axios from "axios";
 
 export class GameUI {
     public app!: Application;
@@ -19,7 +17,6 @@ export class GameUI {
     // layout
     private rotationOffset: number = 0; // radians, clockwise; 0 means self at bottom
 
-    public lifeCounter?: CounterButton;
 
     constructor(options?: {
         ws: WebSocket;
@@ -39,8 +36,8 @@ export class GameUI {
             return;
         }
 
-        const width = options?.width ?? 1024;
-        const height = options?.height ?? 768;
+        const width = options?.width ?? (typeof window !== "undefined" ? window.innerWidth : 1024);
+        const height = options?.height ?? (typeof window !== "undefined" ? window.innerHeight : 768);
 
         this.localPlayerId = options.player.id;
         this.players = [options.player];
@@ -61,10 +58,6 @@ export class GameUI {
 
             // Allow zIndex sorting for dragging
             this.stage.sortableChildren = true;
-
-            this.lifeCounter = new CounterButton({ value: 20, style: { label: "Life", fill: 0x1e1e1e, stroke: 0x444444 } });
-            this.lifeCounter.position.set(width - 160, height - 80);
-            this.stage.addChild(this.lifeCounter);
 
             // Fetch initial session player list
             if (this.sessionId) {

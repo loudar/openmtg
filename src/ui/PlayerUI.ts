@@ -2,6 +2,8 @@ import {Container, Text, TextStyle} from "pixi.js";
 import {StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import type {Player} from "../server/sessionTypes.ts";
+import {getCardSize, onCardSizeChange} from "./globals.ts";
+import {CounterButton} from "./CounterButton.ts";
 
 export class PlayerUI extends Container {
     public setMaxHandWidth(width: number) {
@@ -17,6 +19,8 @@ export class PlayerUI extends Container {
     public hand?: HandView;
     public graveyard: StackView;
     public exile: StackView;
+    public lifeCounter: CounterButton;
+    private unsubscribeCardSize?: () => void;
 
     constructor(info: Player, isSelf: boolean) {
         super();
@@ -29,13 +33,13 @@ export class PlayerUI extends Container {
         });
         nameText.anchor.set(0.5);
         nameText.position.set(0, -90);
+        // name position will be scaled in layout
         this.nameLabel = nameText;
         this.addChild(nameText);
 
         // Build stacks. Library is face-down by default.
         this.library = new StackView("library", info.deck?.cards ?? []);
         this.library.setFaceDown(true);
-        this.library.position.set(-140, -60);
         this.addChild(this.library);
 
         // Interaction: left-click your own library to draw the top card to hand
@@ -56,16 +60,17 @@ export class PlayerUI extends Container {
         });
 
         this.graveyard = new StackView("graveyard", []);
-        this.graveyard.position.set(-40, -60);
         this.addChild(this.graveyard);
 
         this.exile = new StackView("exile", []);
-        this.exile.position.set(60, -60);
         this.addChild(this.exile);
 
         this.hand = new HandView([]);
-        this.hand.position.set(160, -60);
         this.addChild(this.hand);
+
+        // Add life counter per player
+        this.lifeCounter = new CounterButton({ value: 20, style: { label: "Life", fill: 0x1e1e1e, stroke: 0x444444 } });
+        this.addChild(this.lifeCounter);
 
         // Visibility rules: only local player's hand/GY/exile are revealed; others are face-down.
         if (!isSelf) {
@@ -81,5 +86,38 @@ export class PlayerUI extends Container {
             this.graveyard.setFaceDown(false);
             this.exile.setFaceDown(false);
         }
+
+        // Apply initial layout scaled by current card size
+        this.applyScaledLayout();
+        // Subscribe to card size changes to re-apply layout
+        this.unsubscribeCardSize = onCardSizeChange(() => this.applyScaledLayout());
+    }
+
+    private applyScaledLayout() {
+        const scale = getCardSize(); // baseline was tuned for cardSize=2
+        // Base positions originally: name y=-90; stacks y=-60; x: library=-140, grave=-40, exile=60, hand=160; life at ~ (0, 70)
+        const yStacks = -60 * scale;
+        this.nameLabel.y = -90 * scale;
+
+        this.library.position.set(-140 * scale, yStacks);
+        this.graveyard.position.set(-40 * scale, yStacks);
+        this.exile.position.set(60 * scale, yStacks);
+        if (this.hand) {
+            this.hand.position.set(160 * scale, yStacks);
+        }
+        // Life counter placed below stacks, centered under name
+        this.lifeCounter.position.set(0, 70 * scale);
+    }
+
+    public override destroy(options?: any): void {
+        if (this.unsubscribeCardSize) {
+            try {
+                this.unsubscribeCardSize();
+            } catch (e) {
+                // ignore unsubscribe errors
+            }
+            this.unsubscribeCardSize = undefined;
+        }
+        super.destroy(options);
     }
 }

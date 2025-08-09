@@ -1,7 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { CardUI } from "./CardUI.ts";
 import type {ScryfallCard} from "../models/Scryfall.ts";
-import {cardSize} from "./globals.ts";
+import {getCardSize, onCardSizeChange} from "./globals.ts";
 
 export type StackType = "library" | "graveyard" | "exile";
 
@@ -13,6 +13,7 @@ export class StackView extends Container {
     private readonly type: StackType;
     private cards: ScryfallCard[] = [];
     private faceDown: boolean = false;
+    private unsubscribeCardSize?: () => void;
 
     constructor(type: StackType, cards?: ScryfallCard[]) {
         super();
@@ -45,6 +46,9 @@ export class StackView extends Container {
         }
 
         this.redraw();
+
+        // React to card size changes
+        this.unsubscribeCardSize = onCardSizeChange(() => this.redraw());
     }
 
     setCards(cards: ScryfallCard[]) {
@@ -101,8 +105,9 @@ export class StackView extends Container {
         this.content.removeChildren();
         this.frame.clear();
 
-        const w = 80 * cardSize;
-        const h = 110 * cardSize;
+        const cs = getCardSize();
+        const w = 80 * cs;
+        const h = 110 * cs;
 
         // Face-down rendering using CardUI when requested
         if (this.faceDown) {
@@ -185,5 +190,18 @@ export class StackView extends Container {
         arc(x + w - r, y + h - r, 0, Math.PI / 2); // bottom-right
         arc(x + r, y + h - r, Math.PI / 2, Math.PI); // bottom-left
         arc(x + r, y + r, Math.PI, (3 * Math.PI) / 2); // top-left
+    }
+
+    // Ensure we detach listener when destroyed
+    public override destroy(options?: any): void {
+        if (this.unsubscribeCardSize) {
+            try {
+                this.unsubscribeCardSize();
+            } catch (e) {
+                // ignore unsubscribe errors
+            }
+            this.unsubscribeCardSize = undefined;
+        }
+        super.destroy(options);
     }
 }

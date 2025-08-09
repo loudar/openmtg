@@ -1,19 +1,21 @@
 import { Container } from "pixi.js";
 import { CardUI } from "./CardUI.ts";
 import type {ScryfallCard} from "../models/Scryfall.ts";
-import {cardSize} from "./globals.ts";
+import {getCardSize, onCardSizeChange} from "./globals.ts";
 
 export class HandView extends Container {
     private cards: ScryfallCard[] = [];
     private faceDown: boolean = false;
-    private cardWidth: number = 80 * cardSize;
-    private cardHeight: number = 110 * cardSize;
     private defaultGap: number = 8;
     private minSpacing: number = 12; // minimal spacing between cards when heavily overlapped
-    private maxWidth: number = window.innerWidth;
+    private maxWidth: number = (typeof window !== "undefined" ? window.innerWidth : 1024);
 
     private basePositions: number[] = [];
     private cardNodes: Container[] = [];
+    private unsubscribeCardSize?: () => void;
+
+    private get cardWidth(): number { return 80 * getCardSize(); }
+    private get cardHeight(): number { return 110 * getCardSize(); }
 
     constructor(cards?: ScryfallCard[]) {
         super();
@@ -23,6 +25,10 @@ export class HandView extends Container {
             this.cards = [...cards];
         }
         this.redraw();
+        // React to card size changes
+        this.unsubscribeCardSize = onCardSizeChange(() => {
+            this.redraw();
+        });
     }
 
     public setCards(names: ScryfallCard[]) {
@@ -50,6 +56,7 @@ export class HandView extends Container {
     }
 
     private clearCards() {
+        // When re-rendering due to card size change, rebuild nodes entirely
         for (const node of this.cardNodes) {
             node.removeAllListeners();
             this.removeChild(node);
@@ -169,5 +176,16 @@ export class HandView extends Container {
         }
         this.cardNodes[i]!.zIndex = n + 1;
         this.sortChildren();
+    }
+    public override destroy(options?: any): void {
+        if (this.unsubscribeCardSize) {
+            try {
+                this.unsubscribeCardSize();
+            } catch (e) {
+                // ignore unsubscribe errors
+            }
+            this.unsubscribeCardSize = undefined;
+        }
+        super.destroy(options);
     }
 }

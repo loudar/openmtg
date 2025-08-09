@@ -11,6 +11,7 @@ import {
 } from "./server/sessionTypes.ts";
 import {DeckDownloader} from "./tools/DeckDownloader.ts";
 import * as path from "node:path";
+import {ScryfallApi} from "./tools/ScryfallApi.ts";
 
 const PORT = 3000;
 
@@ -100,6 +101,10 @@ app.post("/api/session", async (req, res) => {
 
     const response: SessionResponse = {sessionId: session.id, player};
     return res.json(response);
+});
+
+app.post("/api/symbology", async (req, res) => {
+    return res.json(await ScryfallApi.getSymbology());
 });
 
 app.post("/api/session/join", async (req, res) => {

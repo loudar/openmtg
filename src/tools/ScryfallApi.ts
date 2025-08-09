@@ -1,5 +1,6 @@
 import axios from "axios";
 import type {ScryfallCard} from "../models/Scryfall.ts";
+import type {Symbology} from "../models/Symbology.ts";
 
 const baseUrl = "https://api.scryfall.com";
 
@@ -24,5 +25,10 @@ export class ScryfallApi {
         } catch {
             return null;
         }
+    }
+
+    static async getSymbology() {
+        const res = (await axios.get<Symbology[]>(`${baseUrl}/symbology`));
+        return res.data;
     }
 }
