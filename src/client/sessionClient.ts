@@ -1,7 +1,6 @@
 /* eslint-env browser */
 import axios from "axios";
-import type {Deck} from "../models/MTG.ts";
-import type {CreateSessionRequest, JoinSessionRequest, SessionResponse} from "../server/sessionTypes.ts";
+import type {CreateSessionRequest, JoinSessionRequest, Player, SessionResponse} from "../server/sessionTypes.ts";
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE ?? "http://localhost:3000";
 
@@ -31,7 +30,7 @@ export async function joinSession(sessionId: string, name: string, deck: string)
 export interface PublicSessionResponse {
     id: string;
     createdAt: number;
-    players: { id: string; name: string; deckSize?: number }[];
+    players: Player[];
 }
 
 export async function getSessionPublic(sessionId: string): Promise<PublicSessionResponse> {

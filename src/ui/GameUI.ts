@@ -1,18 +1,19 @@
 import {Application, Container} from "pixi.js";
 import {CounterButton} from "./CounterButton.ts";
-import {PlayerUI, type PlayerInfo} from "./PlayerUI.ts";
+import {PlayerUI} from "./PlayerUI.ts";
 import {getSessionPublic} from "../client/sessionClient.ts";
+import type {Player} from "../server/sessionTypes.ts";
 
 export class GameUI {
-    public app: Application;
+    public app!: Application;
     public stage?: Container;
 
     // Player management
-    private players: PlayerInfo[] = [];
+    private players: Player[] = [];
     private playerViews = new Map<string, PlayerUI>();
-    private localPlayerId?: string;
-    private sessionId?: string;
-    private ws?: WebSocket;
+    private readonly localPlayerId?: string;
+    private readonly sessionId?: string;
+    private readonly ws?: WebSocket;
 
     // layout
     private rotationOffset: number = 0; // radians, clockwise; 0 means self at bottom
@@ -20,27 +21,30 @@ export class GameUI {
     public lifeCounter?: CounterButton;
 
     constructor(options?: {
+        ws: WebSocket;
+        player: Player;
+        sessionId: string;
         width?: number;
         height?: number;
         background?: number;
         parent?: any;
-        sampleCards?: string[]
     }) {
         // prevent opening context menu in-game
         if (typeof document !== "undefined") {
             (document as any).oncontextmenu = (e: Event) => e.preventDefault();
         }
 
+        if (!options) {
+            return;
+        }
+
         const width = options?.width ?? 1024;
         const height = options?.height ?? 768;
 
-        // Read session globals put by the React pre-screen
-        const win: any = (globalThis as any).window ?? undefined;
-        const openmtg = win?.openmtg;
-        this.localPlayerId = openmtg?.playerId;
-        this.sessionId = openmtg?.sessionId;
-        this.ws = openmtg?.ws as WebSocket | undefined;
-        const localDeckNames: string[] | undefined = openmtg?.localDeck?.cards?.map((c: any) => c?.name).filter((n: any) => typeof n === "string");
+        this.localPlayerId = options.player.id;
+        this.players = [options.player];
+        this.sessionId = options.sessionId;
+        this.ws = options.ws as WebSocket;
 
         this.app = new Application();
         this.app.init({
@@ -72,7 +76,7 @@ export class GameUI {
             }
 
             // Build initial player views
-            this.rebuildPlayerViews(localDeckNames);
+            this.rebuildPlayerViews();
             this.layoutPlayers();
 
             // Subscribe to WS for player join/left
@@ -96,7 +100,7 @@ export class GameUI {
         }
         // Server may send either direct notifications or relay wrappers
         if (data?.type === "player:joined") {
-            const p = data.payload?.player as PlayerInfo;
+            const p = data.payload?.player as Player;
             if (p && !this.players.find(x => x.id === p.id)) {
                 this.players.push(p);
                 this.rebuildPlayerViews();
@@ -122,8 +126,11 @@ export class GameUI {
         }
     }
 
-    private rebuildPlayerViews(sampleCards?: string[]) {
-        if (!this.stage) return;
+    private rebuildPlayerViews() {
+        if (!this.stage) {
+            return;
+        }
+
         // remove old views not present
         const knownIds = new Set(this.players.map(p => p.id));
         for (const [id, view] of this.playerViews) {
@@ -132,17 +139,12 @@ export class GameUI {
                 this.playerViews.delete(id);
             }
         }
-        // add missing
+
+        // add missing views
         for (const p of this.players) {
             if (!this.playerViews.has(p.id)) {
                 const isLocal = p.id === this.localPlayerId;
-                const view = new PlayerUI(
-                    p,
-                    isLocal,
-                    isLocal
-                        ? (sampleCards ?? [])
-                        : new Array(Math.max(0, p.deckSize ?? 0)).fill("")
-                );
+                const view = new PlayerUI(p, isLocal);
                 this.playerViews.set(p.id, view);
                 this.stage.addChild(view);
             }
@@ -177,17 +179,26 @@ export class GameUI {
                 view.position.set(x, y);
                 view.pivot.set(0, 0);
                 view.rotation = angle - Math.PI / 2; // rotate UI upright facing center
+                if (typeof (view as any).setMaxHandWidth === "function") {
+                    (view as any).setMaxHandWidth(width);
+                }
             }
         }
     }
 }
 
-export async function startGameUI(container?: any) {
+export async function startGameUI(player: Player, sessionId: string, ws: WebSocket, container?: any) {
     const win: any = (globalThis as any).window;
     const doc: any = (globalThis as any).document;
     if (!win || !doc) {
         // In non-browser (tests, CLI), do nothing but return a constructible UI
         return new GameUI();
     }
-    return new GameUI({parent: container ?? doc.body});
+
+    return new GameUI({
+        parent: container ?? doc.body,
+        sessionId,
+        player,
+        ws
+    });
 }

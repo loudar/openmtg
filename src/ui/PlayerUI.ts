@@ -1,29 +1,30 @@
 import {Container, Text, TextStyle} from "pixi.js";
 import {StackView} from "./StackView.ts";
-
-export interface PlayerInfo {
-    id: string;
-    name: string;
-    deckSize?: number;
-}
+import {HandView} from "./HandView.ts";
+import type {Player} from "../server/sessionTypes.ts";
 
 export class PlayerUI extends Container {
-    public info: PlayerInfo;
-    public isLocal: boolean;
+    public setMaxHandWidth(width: number) {
+        if (this.hand) {
+            this.hand.setMaxWidth(width);
+        }
+    }
+    public info: Player;
+    public isSelf: boolean;
 
     public nameLabel: Text;
     public library: StackView;
-    public hand: StackView;
+    public hand?: HandView;
     public graveyard: StackView;
     public exile: StackView;
 
-    constructor(info: PlayerInfo, isLocal: boolean, sampleCards?: string[]) {
+    constructor(info: Player, isSelf: boolean) {
         super();
         this.info = info;
-        this.isLocal = isLocal;
+        this.isSelf = isSelf;
 
         const nameText = new Text({
-            text: info.name + (isLocal ? " (You)" : ""),
+            text: info.name + (isSelf ? " (You)" : ""),
             style: new TextStyle({ fontFamily: "Arial", fontSize: 14, fill: 0xdddddd })
         });
         nameText.anchor.set(0.5);
@@ -32,7 +33,8 @@ export class PlayerUI extends Container {
         this.addChild(nameText);
 
         // Build stacks. Library is face-down by default.
-        this.library = new StackView("library", sampleCards ?? []);
+        console.log("deck cards: ", info.deck?.cards);
+        this.library = new StackView("library", info.deck?.cards ?? []);
         this.library.setFaceDown(true);
         this.library.position.set(-140, -60);
         this.addChild(this.library);
@@ -45,17 +47,21 @@ export class PlayerUI extends Container {
         this.exile.position.set(60, -60);
         this.addChild(this.exile);
 
-        this.hand = new StackView("hand", []);
+        this.hand = new HandView([]);
         this.hand.position.set(160, -60);
         this.addChild(this.hand);
 
         // Visibility rules: only local player's hand/GY/exile are revealed; others are face-down.
-        if (!isLocal) {
-            this.hand.setFaceDown(true);
+        if (!isSelf) {
+            if (this.hand) {
+                this.hand.setFaceDown(true);
+            }
             this.graveyard.setFaceDown(true);
             this.exile.setFaceDown(true);
         } else {
-            this.hand.setFaceDown(false);
+            if (this.hand) {
+                this.hand.setFaceDown(false);
+            }
             this.graveyard.setFaceDown(false);
             this.exile.setFaceDown(false);
         }

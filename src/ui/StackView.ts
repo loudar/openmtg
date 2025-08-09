@@ -1,4 +1,5 @@
 import {Container, Graphics, Text, TextStyle, Sprite, Texture} from "pixi.js";
+import type {Card} from "mtggraphql";
 
 export type StackType = "library" | "graveyard" | "exile" | "hand";
 
@@ -6,12 +7,12 @@ export class StackView extends Container {
     private frame: Graphics;
     private countText: Text;
     private labelText: Text;
-    private cards: string[] = [];
+    private cards: Card[] = [];
     private type: StackType;
     private faceDown: boolean = false;
     private backSprite?: Sprite;
 
-    constructor(type: StackType, cards?: string[]) {
+    constructor(type: StackType, cards?: Card[]) {
         super();
         this.eventMode = "static";
         this.cursor = "pointer";
@@ -35,18 +36,20 @@ export class StackView extends Container {
         this.countText.position.set(40, 55);
         this.addChild(this.countText);
 
-        if (cards) this.cards = [...cards];
+        if (cards) {
+            this.cards = [...cards];
+        }
 
         this.redraw();
     }
 
-    setCards(names: string[]) {
-        this.cards = [...names];
+    setCards(cards: Card[]) {
+        this.cards = [...cards];
         this.redraw();
     }
 
-    addCard(name: string) {
-        this.cards.push(name);
+    addCard(card: Card) {
+        this.cards.push(card);
         this.redraw();
     }
 
@@ -77,7 +80,7 @@ export class StackView extends Container {
         this.frame.removeChildren();
         this.frame.clear();
         if (this.backSprite) {
-            this.backSprite.destroy({ children: true, texture: false });
+            this.backSprite.destroy({children: true, texture: false});
             this.backSprite = undefined;
         }
 
@@ -87,7 +90,7 @@ export class StackView extends Container {
         // Face-down rendering using card back image when requested
         if (this.faceDown) {
             try {
-                const tex = Texture.from("/img/cardBack.jpg");
+                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
                 const spr = new Sprite(tex);
                 spr.width = w;
                 spr.height = h;
@@ -114,7 +117,7 @@ export class StackView extends Container {
                 // face-down stacked look
                 for (let i = 0; i < 3; i++) {
                     const g = new Graphics();
-                    g.roundRect(0 + i * 2, 0 + i * 2, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
+                    g.roundRect(i * 2, i * 2, w, h, 6).fill(0x444444).stroke({color: 0x222222, width: 2});
                     this.frame.addChild(g);
                 }
             } else {

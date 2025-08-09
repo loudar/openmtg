@@ -1,7 +1,7 @@
 /* eslint-env node */
 import express from "express";
-import { createServer } from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import {createServer} from "http";
+import {WebSocketServer, WebSocket} from "ws";
 import {
     type MtgSession,
     type Player,
@@ -51,7 +51,7 @@ function publicSession(s: MtgSession) {
     return {
         id: s.id,
         createdAt: s.createdAt,
-        players: Array.from(s.players.values()).map((p) => ({ id: p.id, name: p.name, deckSize: p.deck?.cards?.length ?? 0 })),
+        players: [...s.players.values()],
     };
 }
 
@@ -61,7 +61,7 @@ app.use(express.json());
 
 // Serve static images from src/img at /img
 const IMG_DIR = path.resolve(process.cwd(), "src", "img");
-app.use("/img", express.static(IMG_DIR, { maxAge: "1d", etag: true }));
+app.use("/img", express.static(IMG_DIR, {maxAge: "1d", etag: true}));
 
 // Simple CORS middleware to mirror previous behavior
 app.use((req, res, next) => {
@@ -112,7 +112,12 @@ app.post("/api/session/join", async (req, res) => {
     const response: SessionResponse = {sessionId: session.id, player};
 
     // Notify existing players via WS that a new player joined
-    const msg = JSON.stringify({type: "player:joined", payload: {player: {id: player.id, name: player.name, deckSize: player.deck?.cards?.length ?? 0}}});
+    const msg = JSON.stringify({
+        type: "player:joined",
+        payload: {
+            player
+        }
+    });
     for (const ws of getOrCreateSocketSet(session.id)) {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(msg);
@@ -124,16 +129,22 @@ app.post("/api/session/join", async (req, res) => {
 
 app.get("/api/session", (req, res) => {
     const id = (req.query.id as string | undefined) ?? undefined;
-    if (!id) return res.status(400).json({ error: "Missing id" });
+    if (!id) {
+        return res.status(400).json({error: "Missing id"});
+    }
+
     const session = sessions.get(id);
-    if (!session) return res.status(404).json({ error: "Session not found" });
+    if (!session) {
+        return res.status(404).json({error: "Session not found"});
+    }
+
     return res.json(publicSession(session));
 });
 
 // Create HTTP server and attach WS
 const server = createServer(app);
 
-const wss = new WebSocketServer({ server, path: "/ws" });
+const wss = new WebSocketServer({server, path: "/ws"});
 
 wss.on("connection", (ws, req) => {
     const url = new URL(req.url || "", `http://${req.headers.host}`);
@@ -169,7 +180,7 @@ wss.on("connection", (ws, req) => {
             payload = String(data);
         }
 
-        const wrapped = JSON.stringify({ type: "relay", from: playerId, payload });
+        const wrapped = JSON.stringify({type: "relay", from: playerId, payload});
         for (const peer of set) {
             if (peer !== ws && peer.readyState === WebSocket.OPEN) {
                 peer.send(wrapped);

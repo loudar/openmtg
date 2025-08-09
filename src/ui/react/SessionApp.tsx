@@ -2,6 +2,7 @@
 import React, {useCallback, useMemo, useState} from "react";
 import {createSession, joinSession, connectSessionWS} from "../../client/sessionClient.ts";
 import {startGameUI} from "../GameUI.ts";
+import type {Player} from "../../server/sessionTypes.ts";
 
 export function SessionApp() {
     const [name, setName] = useState("");
@@ -10,22 +11,21 @@ export function SessionApp() {
     const [status, setStatus] = useState<string>("");
     const [busy, setBusy] = useState(false);
 
-    const handleAfterJoin = useCallback(async (sid: string, pid: string, playerName: string) => {
-        const ws = connectSessionWS(sid, pid);
+    const handleAfterJoin = useCallback(async (sid: string, player: Player) => {
+        const ws = connectSessionWS(sid, player.id);
         ws.addEventListener("open", async () => {
-            setStatus(`Joined session ${sid} as ${playerName}`);
-            // Expose session info globally for the Pixi UI
-            (window as any).openmtg = { sessionId: sid, playerId: pid, name: playerName, ws };
-            // Remove React root and start Pixi Game UI
+            setStatus(`Joined session ${sid} as ${player.name}`);
             const rootEl = document.getElementById("root");
             if (rootEl && rootEl.parentElement) {
                 rootEl.parentElement.removeChild(rootEl);
             }
-            await startGameUI();
+            await startGameUI(player, sid, ws);
         });
+
         ws.addEventListener("message", (ev) => {
             console.log("WS message:", ev.data);
         });
+
         ws.addEventListener("close", () => {
             console.warn("WS closed");
         });
@@ -41,8 +41,7 @@ export function SessionApp() {
         setStatus("Creating session...");
         try {
             const res = await createSession(finalName, deckInput);
-            (window as any).openmtg = { ...(window as any).openmtg, localDeck: res.player.deck };
-            await handleAfterJoin(res.sessionId, res.player.id, finalName);
+            await handleAfterJoin(res.sessionId, res.player);
         } catch (e) {
             setStatus(`Create failed: ${(e as Error).message}`);
         } finally {
@@ -65,8 +64,7 @@ export function SessionApp() {
         setStatus(`Joining session ${sid}...`);
         try {
             const res = await joinSession(sid, finalName, deckInput);
-            (window as any).openmtg = { ...(window as any).openmtg, localDeck: res.player.deck };
-            await handleAfterJoin(res.sessionId, res.player.id, finalName);
+            await handleAfterJoin(res.sessionId, res.player);
         } catch (e) {
             setStatus(`Join failed: ${(e as Error).message}`);
         } finally {
