@@ -1,5 +1,5 @@
-import {DeckDownloader} from "../tools/DeckDownloader.ts";
 import * as fs from "node:fs";
+import {DeckDownloader} from "../src/tools/DeckDownloader.ts";
 
 const input = `1x Aatchik, Emerald Radian (dft) 187 [Tokens]
 1x Abaddon the Despoiler (40k) 2 *F* [Draw]

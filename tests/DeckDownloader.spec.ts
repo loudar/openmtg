@@ -1,5 +1,5 @@
 import {expect, it} from "vitest";
-import {DeckDownloader} from "../tools/DeckDownloader.ts";
+import {DeckDownloader} from "../src/tools/DeckDownloader.ts";
 
 it('should return deck', async () => {
     const input = `1x Abrade (vow) 139 [Removal]

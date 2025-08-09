@@ -116,6 +116,7 @@ export interface Deck extends CanHaveErrors {
     cards: Card[];
     commander?: Card;
     tokens?: Card[];
+    cardBackImageUrl?: string;
 }
 
 export interface CardLine {
@@ -126,4 +127,9 @@ export interface CardLine {
     foil?: boolean;
     categories?: string[];
     colorTagData?: string;
+}
+
+export interface DeckImport {
+    importInput: string;
+    cardBackImageUrl?: string;
 }
