@@ -66,21 +66,19 @@ export function cardLine(line: string): CardLine {
         }
     }
 
-    // 6) Collector number: pick the last standalone integer token; remove that one.
+    // 6) Collector number: pick the last collector number token (number with optional suffix); remove that one.
     {
-        const numberMatches = [...s.matchAll(/\b(\d+)\b/g)];
-        if (numberMatches.length > 0) {
-            const lastNum = numberMatches.at(-1)!;
-            const value = parseInt(lastNum[1] ?? "", 10);
-            if (!Number.isNaN(value)) {
-                result.collectorNumber = value;
+        // Match collector numbers like "123", "204d", "75p", etc.
+        const collectorMatches = [...s.matchAll(/\b(\d+[a-z]?)\b/gi)];
+        if (collectorMatches.length > 0) {
+            const lastCollector = collectorMatches.at(-1)!;
+            result.collectorNumber = lastCollector[1]?.trim();
 
-                // Remove only this occurrence using its index
-                const idx = (lastNum as any).index as number;
-                const before = s.slice(0, idx);
-                const after = s.slice(idx + lastNum[0].length);
-                s = (before + after).trim();
-            }
+            // Remove only this occurrence using its index
+            const idx = (lastCollector as any).index as number;
+            const before = s.slice(0, idx);
+            const after = s.slice(idx + lastCollector[0].length);
+            s = (before + after).trim();
         }
     }
 

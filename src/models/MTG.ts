@@ -125,7 +125,7 @@ export interface CardLine {
     count?: number;
     name: string;
     set?: string;
-    collectorNumber?: number;
+    collectorNumber?: string;
     foil?: boolean;
     categories?: string[];
     colorTagData?: string;
