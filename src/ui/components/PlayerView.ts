@@ -1,9 +1,10 @@
-import {Container, Point, Text, TextStyle} from "pixi.js";
-import {StackView} from "./StackView.ts";
+import {Container, Text, TextStyle} from "pixi.js";
+import {type StackType, StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
+import type {ScryfallCard} from "../../models/Scryfall.ts";
 
 export class PlayerView extends Container {
     public setMaxHandWidth(width: number) {
@@ -16,6 +17,7 @@ export class PlayerView extends Container {
 
     public nameLabel: Text;
     public library: StackView;
+    private attractions: null | StackView;
     public hand?: HandView;
     public graveyard: StackView;
     public exile: StackView;
@@ -42,27 +44,9 @@ export class PlayerView extends Container {
         this.nameLabel = nameText;
         this.addChild(nameText);
 
-        // Build stacks. Library is face-down by default.
-        this.library = new StackView("library", info.deck?.cards ?? []);
-        this.library.setFaceDown(true);
-        this.addChild(this.library);
-
-        // Interaction: left-click your own library to draw the top card to hand
-        this.library.on("pointerdown", (e: any) => {
-            if (!this.isSelf) {
-                return;
-            }
-
-            const isLeftClick = typeof e?.button === "number" ? e.button === 0 : true;
-            if (!isLeftClick) {
-                return;
-            }
-
-            const drawn = this.library.drawCount(1);
-            if (drawn && this.hand) {
-                this.hand.addCards(drawn);
-            }
-        });
+        // Build decks. Decks are face-down by default.
+        this.library = this.addDeck("library", info.deck.library)!;
+        this.attractions = this.addDeck("library", info.deck.attractions);
 
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
@@ -98,6 +82,34 @@ export class PlayerView extends Container {
         this.unsubscribeCardSize = onCardSizeChange(() => this.applyScaledLayout());
     }
 
+    private addDeck(name: StackType, cards?: ScryfallCard[]) {
+        if (!cards) {
+            return null;
+        }
+
+        const deck = new StackView(name, cards ?? []);
+        deck.setFaceDown(true);
+        this.addChild(deck);
+
+        deck.on("pointerdown", (e: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+
+            const isLeftClick = typeof e?.button === "number" ? e.button === 0 : true;
+            if (!isLeftClick) {
+                return;
+            }
+
+            const drawn = deck.drawCount(1);
+            if (drawn && this.hand) {
+                this.hand.addCards(drawn);
+            }
+        });
+
+        return deck;
+    }
+
     private applyScaledLayout() {
         const scale = getCardSize();
         const yStacks = -60 * scale;
@@ -107,17 +119,27 @@ export class PlayerView extends Container {
         const topRowY = -110 * scale;
         this.nameLabel.position.set(left + 200, topRowY + 30);
 
-        const stacksLeft = left + 10;
+        let stacksLeft = left + 10;
         const dist = 100 * scale;
-        this.library.position.set(stacksLeft, yStacks);
-        this.graveyard.position.set(stacksLeft + dist, yStacks);
-        this.exile.position.set(stacksLeft + (dist * 2), yStacks);
+
+        if (this.attractions) {
+            stacksLeft = this.addStackView(this.attractions, stacksLeft, yStacks);
+        }
+
+        stacksLeft = this.addStackView(this.library, stacksLeft, yStacks);
+        stacksLeft = this.addStackView(this.graveyard, stacksLeft, yStacks);
+        stacksLeft = this.addStackView(this.exile, stacksLeft, yStacks);
 
         if (this.hand) {
             this.hand.position.set(stacksLeft + (dist * 3), yStacks);
         }
         // Life counter placed below stacks, centered under name
         this.lifeCounter.position.set(left + 30, topRowY);
+    }
+
+    private addStackView(stackView: StackView, layoutX: number, layoutY: number) {
+        stackView.position.set(layoutX, layoutY);
+        return layoutX + 100 * getCardSize()
     }
 
     public override destroy(options?: any): void {

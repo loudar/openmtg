@@ -3,7 +3,7 @@ import type { Deck } from "../models/MTG.ts";
 export interface Player {
   id: string; // uuid v4
   name: string;
-  deck?: Deck; // optional for join; can be set later
+  deck: Deck;
 }
 
 export interface MtgSession {

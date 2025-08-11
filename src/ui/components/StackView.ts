@@ -3,7 +3,7 @@ import { CardView } from "./CardView.ts";
 import type {ScryfallCard} from "../../models/Scryfall.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
 
-export type StackType = "library" | "graveyard" | "exile";
+export type StackType = "library" | "graveyard" | "exile" | "attractions";
 
 export class StackView extends Container {
     private readonly frame: Graphics;

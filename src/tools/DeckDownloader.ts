@@ -12,21 +12,32 @@ export class DeckDownloader {
     static async getFromCardList(cardLines: CardLine[]): Promise<Deck> {
         const mtgCards = await ScryfallApi.getCardsByNames(cardLines.map(card => card.name));
 
-        const cards = [];
+        const deck: Deck = {
+            library: [],
+            errors: []
+        };
+
         for (const line of cardLines) {
             const card = mtgCards.cards.find((card) => card.name === line.name);
             if (card) {
                 const count = line.count ?? 1;
                 for (let i = 0; i < count; i++) {
-                    cards.push(card);
+                    if (line.categories?.includes("Commander{top}")) {
+                        deck.commanders ??= [];
+                        deck.commanders.push(card);
+                    } else if (line.categories?.includes("Attraction{noDeck}")) {
+                        deck.attractions ??= [];
+                        deck.attractions.push(card);
+                    } else {
+                        deck.library.push(card);
+                    }
                 }
+            } else {
+                deck.errors!.push(`Card ${line.name} could not be found (${line.count ?? 1}x times)`);
             }
         }
 
-        return {
-            cards,
-            errors: mtgCards.errors
-        }
+        return deck;
     }
 
     static async getFromString(input: string): Promise<Deck> {
