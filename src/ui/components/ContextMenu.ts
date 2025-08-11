@@ -115,8 +115,8 @@ export class ContextMenu extends Container {
         this.visible = false;
     }
 
-    private buildItem(label: string, index: number, onClick: () => void): Container & { computedWidth: number, setWidth: (w: number) => void } {
-        const row = new Container() as Container & { computedWidth: number, setWidth: (w: number) => void };
+    private buildItem(label: string, index: number, onClick: () => void): Container & { computedWidth: number, setWidth: (w: number) => void, rowWidth?: number } {
+        const row = new Container() as Container & { computedWidth: number, setWidth: (w: number) => void, rowWidth?: number };
         const bg = new Graphics();
         const txt = new Text({
             text: label,
@@ -126,19 +126,19 @@ export class ContextMenu extends Container {
         row.addChild(bg);
         row.addChild(txt);
 
-        // For measuring width
+        // For measuring width (text + horizontal padding inside row)
         row.computedWidth = txt.width + 16;
         row.setWidth = (w: number) => {
-            // Update text max width if needed in future
+            row.rowWidth = Math.max(0, w);
             txt.x = 8;
-            // background hover width is set dynamically on hover using w
         };
 
         row.eventMode = "dynamic";
         row.cursor = "pointer";
         row.on("pointerover", () => {
             bg.clear();
-            bg.roundRect(0, 0, Math.max(0, (row.parent ? (row.parent.parent as any)?.width ?? 0 : 0) || 0), this.itemHeight, 6).fill(0x2a2a2a);
+            const w = (row.rowWidth && row.rowWidth > 0) ? row.rowWidth : (txt.width + 16);
+            bg.roundRect(0, 0, w, this.itemHeight, 6).fill(0x2a2a2a);
         });
         row.on("pointerout", () => {
             bg.clear();
