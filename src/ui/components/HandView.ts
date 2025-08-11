@@ -76,8 +76,8 @@ export class HandView extends Container {
             leftClick: () => {
                 this.playCard(index);
             },
-            rightClick: () => {
-                this.openMenu(index);
+            rightClick: (_c, e) => {
+                this.openMenu(index, e);
             }
         });
 
@@ -102,10 +102,12 @@ export class HandView extends Container {
         this.emit("playCard", {card, index});
     }
 
-    private openMenu(index: number) {
+    private openMenu(index: number, e?: any) {
         const card = this.cards[index];
         const options = {source: "hand", actions: ["Play", "Details", "Move to Graveyard"]};
-        this.emit("openMenu", {card, index, options});
+        const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
+        const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
+        this.emit("openMenu", {card, index, options, position: {x: gx, y: gy}});
     }
 
     private redraw() {

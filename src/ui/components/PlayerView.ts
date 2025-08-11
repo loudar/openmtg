@@ -62,6 +62,36 @@ export class PlayerView extends Container {
         this.hand = new HandView([]);
         this.addChild(this.hand);
 
+        // Bubble openMenu from children
+        if (this.hand) {
+            this.hand.on("openMenu", (payload: any) => {
+                if (!this.isSelf) {
+                    return;
+                }
+                this.emit("openMenu", payload);
+            });
+        }
+        if (this.commanderView) {
+            this.commanderView.on("openMenu", (payload: any) => {
+                if (!this.isSelf) {
+                    return;
+                }
+                this.emit("openMenu", payload);
+            });
+        }
+        this.graveyard.on("cardRightClick", (payload: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+            this.emit("openMenu", payload);
+        });
+        this.exile.on("cardRightClick", (payload: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+            this.emit("openMenu", payload);
+        });
+
         // Add life counter per player
         this.lifeCounter = new CounterButton({value: 20, style: {label: "Life", fill: 0x1e1e1e, stroke: 0x444444}});
         this.addChild(this.lifeCounter);

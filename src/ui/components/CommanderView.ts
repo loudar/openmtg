@@ -55,8 +55,8 @@ export class CommanderView extends Container {
                 leftClick: () => {
                     this.moveCommanderToInPlay(i);
                 },
-                rightClick: () => {
-                    this.openMenu(i);
+                rightClick: (_c, e) => {
+                    this.openMenu(i, e);
                 }
             });
             cardView.position.set(i * (w + spacing), h + spacing);
@@ -72,10 +72,12 @@ export class CommanderView extends Container {
         this.redraw();
     }
 
-    private openMenu(index: number) {
+    private openMenu(index: number, e?: any) {
         const commander = this.commanders[index];
         const options = {source: "commander", actions: ["Cast", "View Command Zone", "Details"]};
-        this.emit("openMenu", {card: commander, index, options});
+        const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
+        const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
+        this.emit("openMenu", {card: commander, index, options, position: {x: gx, y: gy}});
     }
 
     public override destroy(options?: any): void {

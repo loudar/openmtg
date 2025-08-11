@@ -119,9 +119,11 @@ export class StackView extends Container {
             leftClick: () => {
                 this.emit("cardLeftClick", {zone: this.type});
             },
-            rightClick: () => {
+            rightClick: (_c, e) => {
                 const options = {source: this.type, actions: ["Search"]};
-                this.emit("cardRightClick", {zone: this.type, options});
+                const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
+                const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
+                this.emit("cardRightClick", {zone: this.type, options, position: {x: gx, y: gy}});
             }
         };
 

@@ -2,6 +2,7 @@ import {Application, Container, Assets} from "pixi.js";
 import {PlayerView} from "./PlayerView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {getSessionPublic} from "../../client/sessionClient.ts";
+import {ContextMenu} from "./ContextMenu.ts";
 
 export class GameView {
     public app!: Application;
@@ -16,6 +17,9 @@ export class GameView {
 
     // layout
     private rotationOffset: number = 0; // radians, clockwise; 0 means self at bottom
+
+    // context menu
+    private contextMenu?: ContextMenu;
 
     constructor(options?: {
         ws: WebSocket;
@@ -58,6 +62,12 @@ export class GameView {
             // Allow zIndex sorting for dragging
             this.stage.sortableChildren = true;
 
+            // Setup context menu
+            const wv = this.app.renderer.width as number;
+            const hv = this.app.renderer.height as number;
+            this.contextMenu = new ContextMenu(wv, hv);
+            this.stage.addChild(this.contextMenu);
+
             // Fetch initial session player list
             if (this.sessionId) {
                 try {
@@ -81,6 +91,11 @@ export class GameView {
             // Subscribe to WS for player join/left
             if (this.ws) {
                 this.ws.addEventListener("message", (ev) => this.onWSMessage(ev));
+            }
+
+            // Close context menu on window resize and relayout
+            if (this.contextMenu) {
+                this.contextMenu.close();
             }
 
             // Handle window resize to keep layout circular
@@ -144,6 +159,22 @@ export class GameView {
             if (!this.playerViews.has(p.id)) {
                 const isLocal = p.id === this.localPlayerId;
                 const view = new PlayerView(p, isLocal);
+                // Listen for context menu requests from this player's UI
+                view.on("openMenu", (payload: any) => {
+                    if (!this.contextMenu) {
+                        return;
+                    }
+                    const actions: string[] = payload?.options?.actions ?? [];
+                    const items = actions.map((label: string) => ({
+                        label,
+                        onClick: () => {
+                            // Placeholder: future action dispatch can go here
+                        }
+                    }));
+                    const pos = payload?.position ?? {x: (this.app.renderer.width as number) / 2, y: (this.app.renderer.height as number) / 2};
+                    this.contextMenu.close();
+                    this.contextMenu.open(items, pos.x, pos.y);
+                });
                 this.playerViews.set(p.id, view);
                 this.stage.addChild(view);
             }
