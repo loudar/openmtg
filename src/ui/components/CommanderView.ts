@@ -1,6 +1,6 @@
 import {Container, Graphics, Text, TextStyle} from "pixi.js";
 import { CardView } from "./CardView.ts";
-import {CARD_HEIGHT, CARD_WIDTH, getCardSize, onCardSizeChange, MARGIN, FONT_SIZE} from "../globals.ts";
+import {CARD_HEIGHT, CARD_WIDTH, getCardSize, onCardSizeChange, MARGIN, FONT_SIZE, FONT_COLOR} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
 import type {Card} from "../../models/MTG.ts";
 
@@ -58,7 +58,7 @@ export class CommanderView extends Container {
                 style: new TextStyle({
                     fontFamily: "Arial",
                     fontSize: FONT_SIZE,
-                    fill: 0xffffff
+                    fill: FONT_COLOR
                 }),
                 position: { x: 0, y: -FONT_SIZE }
             });

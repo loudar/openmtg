@@ -1,4 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 
 export type ContextMenuItem = {
     label: string;
@@ -119,7 +120,7 @@ export class ContextMenu extends Container {
         const bg = new Graphics();
         const txt = new Text({
             text: label,
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 14, fill: 0xffffff })
+            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: FONT_COLOR })
         });
         txt.y = (this.itemHeight - 14) / 2;
         row.addChild(bg);

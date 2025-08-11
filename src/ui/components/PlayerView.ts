@@ -4,7 +4,7 @@ import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
 import {CommanderView} from "./CommanderView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
-import {CARD_HEIGHT, FONT_SIZE, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
+import {CARD_HEIGHT, FONT_COLOR, FONT_SIZE, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
 import type {Card} from "../../models/MTG.ts";
 
 export class PlayerView extends Container {
@@ -37,7 +37,7 @@ export class PlayerView extends Container {
             style: new TextStyle({
                 fontFamily: "Arial",
                 fontSize: FONT_SIZE,
-                fill: 0xffffff,
+                fill: FONT_COLOR,
                 align: "left",
             }),
         });

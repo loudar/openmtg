@@ -1,5 +1,5 @@
 import {type CanvasTextOptions, Container, Graphics, Text, TextStyle} from "pixi.js";
-import {FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 import type {CounterButtonStyle} from "./CounterButton.ts";
 
 export interface TextViewOptions extends CanvasTextOptions {
@@ -25,7 +25,7 @@ export class TextView extends Container {
             textStyle: new TextStyle({
                 fontFamily: "Arial",
                 fontSize: FONT_SIZE,
-                fill: 0xffffff
+                fill: FONT_COLOR
             }),
             label: opts.text,
         } as any;

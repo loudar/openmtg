@@ -1,6 +1,6 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import {CardView, type CardViewActions} from "./CardView.ts";
-import {CARD_HEIGHT, CARD_WIDTH, FONT_SIZE, getCardSize, onCardSizeChange} from "../globals.ts";
+import {CARD_HEIGHT, CARD_WIDTH, FONT_COLOR, FONT_SIZE, getCardSize, onCardSizeChange} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
 import type {Card} from "../../models/MTG.ts";
 
@@ -32,7 +32,7 @@ export class StackView extends Container {
             style: new TextStyle({
                 fontFamily: "Arial",
                 fontSize: FONT_SIZE,
-                fill: 0xcccccc
+                fill: FONT_COLOR
             })
         });
         this.labelText.position.set(4, -16);
@@ -40,7 +40,7 @@ export class StackView extends Container {
 
         this.countText = new Text({
             text: "0",
-            style: new TextStyle({fontFamily: "Arial", fontSize: FONT_SIZE, fill: 0xffffff})
+            style: new TextStyle({fontFamily: "Arial", fontSize: FONT_SIZE, fill: FONT_COLOR})
         });
         this.countText.anchor.set(0.5);
         this.countText.position.set(40, 55);

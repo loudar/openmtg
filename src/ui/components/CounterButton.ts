@@ -1,5 +1,5 @@
 import {Container, Graphics, Text, TextStyle} from "pixi.js";
-import {FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 
 export type CounterButtonStyle = {
     width?: number;
@@ -41,7 +41,7 @@ export class CounterButton extends Container {
             textStyle: new TextStyle({
                 fontFamily: "Arial",
                 fontSize: FONT_SIZE,
-                fill: 0xffffff
+                fill: FONT_COLOR
             }),
             label: "Counter",
         } as any;

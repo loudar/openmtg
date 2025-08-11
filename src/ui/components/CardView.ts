@@ -1,6 +1,6 @@
 import {Assets, Container, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js";
 import type {Card} from "../../models/MTG.ts";
-import {FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 
 // CardUI is responsible for rendering a single card (face-up or face-down)
 // Width/height are fixed per instance; callers position/scale externally as needed.
@@ -262,7 +262,7 @@ export class CardView extends Container {
                 style: new TextStyle({
                     fontFamily: "Arial",
                     fontSize: FONT_SIZE,
-                    fill: 0xffffff,
+                    fill: FONT_COLOR,
                     wordWrap: true,
                     wordWrapWidth: this.w - 8
                 })

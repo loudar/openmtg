@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import {FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 
 export class CounterView extends Container {
     private value: number;
@@ -32,7 +32,7 @@ export class CounterView extends Container {
             style: new TextStyle({
                 fontFamily: "Arial",
                 fontSize: FONT_SIZE,
-                fill: 0xffffff
+                fill: FONT_COLOR
             })
         });
         minusText.anchor.set(0.5);
@@ -47,7 +47,7 @@ export class CounterView extends Container {
 
         const plusText = new Text({
             text: "+",
-            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: 0xffffff })
+            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: FONT_COLOR })
         });
         plusText.anchor.set(0.5);
         plusText.position.set(137, 25);
@@ -55,7 +55,7 @@ export class CounterView extends Container {
 
         this.text = new Text({
             text: `${this.mtgLabel}: ${this.value}`,
-            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: 0xffffff })
+            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: FONT_COLOR })
         });
         this.text.anchor.set(0.5);
         this.text.position.set(80, 25);
