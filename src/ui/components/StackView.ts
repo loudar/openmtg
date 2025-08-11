@@ -1,7 +1,7 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
 import { CardView } from "./CardView.ts";
 import type {ScryfallCard} from "../../models/Scryfall.ts";
-import {getCardSize, onCardSizeChange} from "../globals.ts";
+import {CARD_HEIGHT, CARD_WIDTH, getCardSize, onCardSizeChange} from "../globals.ts";
 
 export type StackType = "library" | "graveyard" | "exile" | "attractions";
 
@@ -93,6 +93,8 @@ export class StackView extends Container {
         switch (this.type) {
             case "library":
                 return "Library";
+            case "attractions":
+                return "Attractions";
             case "graveyard":
                 return "Graveyard";
             case "exile":
@@ -105,8 +107,8 @@ export class StackView extends Container {
         this.content.removeChildren();
         this.frame.clear();
 
-        const w = 80 * getCardSize();
-        const h = 110 * getCardSize();
+        const w = CARD_WIDTH * getCardSize();
+        const h = CARD_HEIGHT * getCardSize();
 
         // Face-down rendering using CardUI when requested
         if (this.faceDown) {

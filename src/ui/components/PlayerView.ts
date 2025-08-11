@@ -3,7 +3,7 @@ import {type StackType, StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
 import type {Player} from "../../server/sessionTypes.ts";
-import {getCardSize, onCardSizeChange} from "../globals.ts";
+import {CARD_HEIGHT, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
 import type {ScryfallCard} from "../../models/Scryfall.ts";
 
 export class PlayerView extends Container {
@@ -12,6 +12,7 @@ export class PlayerView extends Container {
             this.hand.setMaxWidth(width);
         }
     }
+
     public info: Player;
     public isSelf: boolean;
 
@@ -33,20 +34,20 @@ export class PlayerView extends Container {
             text: info.name + (isSelf ? " (You)" : ""),
             style: new TextStyle({
                 fontFamily: "Arial",
-                fontSize: 14,
+                fontSize: 18,
                 fill: 0xffffff,
                 align: "left",
             }),
         });
-        nameText.anchor.set(0.5);
+        nameText.anchor.set(0, 1);
         nameText.position.set(0, -90);
-        // name position will be scaled in layout
         this.nameLabel = nameText;
         this.addChild(nameText);
 
         // Build decks. Decks are face-down by default.
+        console.log(info.deck);
         this.library = this.addDeck("library", info.deck.library)!;
-        this.attractions = this.addDeck("library", info.deck.attractions);
+        this.attractions = this.addDeck("attractions", info.deck.attractions);
 
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
@@ -58,7 +59,7 @@ export class PlayerView extends Container {
         this.addChild(this.hand);
 
         // Add life counter per player
-        this.lifeCounter = new CounterButton({ value: 20, style: { label: "Life", fill: 0x1e1e1e, stroke: 0x444444 } });
+        this.lifeCounter = new CounterButton({value: 20, style: {label: "Life", fill: 0x1e1e1e, stroke: 0x444444}});
         this.addChild(this.lifeCounter);
 
         // Visibility rules: only local player's hand/GY/exile are revealed; others are face-down.
@@ -110,36 +111,42 @@ export class PlayerView extends Container {
         return deck;
     }
 
+    private row(index: number) {
+        const base = -(CARD_HEIGHT / 2) * getCardSize();
+        return base - this.rowHeight() * (index - 1);
+    }
+
+    private rowHeight() {
+        return (CARD_HEIGHT * getCardSize()) + MARGIN;
+    }
+
     private applyScaledLayout() {
-        const scale = getCardSize();
-        const yStacks = -60 * scale;
+        const row1 = this.row(1);
+        const row2 = this.row(2);
+
         const width = window.innerWidth;
         const left = -width / 2;
 
-        const topRowY = -110 * scale;
-        this.nameLabel.position.set(left + 200, topRowY + 30);
+        this.nameLabel.position.set(left + 200, row2 - (CARD_HEIGHT / 2));
+        this.lifeCounter.position.set(left + 30, row2 - 30 - (CARD_HEIGHT / 2));
+        let stacksLeft = left + MARGIN;
 
-        let stacksLeft = left + 10;
-        const dist = 100 * scale;
+        stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
+        stacksLeft = this.addContainer(this.library, stacksLeft, row1);
+        this.addContainer(this.hand, stacksLeft, row1);
 
-        if (this.attractions) {
-            stacksLeft = this.addStackView(this.attractions, stacksLeft, yStacks);
-        }
-
-        stacksLeft = this.addStackView(this.library, stacksLeft, yStacks);
-        stacksLeft = this.addStackView(this.graveyard, stacksLeft, yStacks);
-        stacksLeft = this.addStackView(this.exile, stacksLeft, yStacks);
-
-        if (this.hand) {
-            this.hand.position.set(stacksLeft + (dist * 3), yStacks);
-        }
-        // Life counter placed below stacks, centered under name
-        this.lifeCounter.position.set(left + 30, topRowY);
+        stacksLeft = left + MARGIN;
+        stacksLeft = this.addContainer(this.graveyard, stacksLeft, row2);
+        this.addContainer(this.exile, stacksLeft, row2);
     }
 
-    private addStackView(stackView: StackView, layoutX: number, layoutY: number) {
+    private addContainer(stackView: Container | null | undefined, layoutX: number, layoutY: number) {
+        if (!stackView) {
+            return layoutX;
+        }
+
         stackView.position.set(layoutX, layoutY);
-        return layoutX + 100 * getCardSize()
+        return layoutX + 100 * getCardSize();
     }
 
     public override destroy(options?: any): void {
