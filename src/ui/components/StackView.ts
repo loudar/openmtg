@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import { CardView } from "./CardView.ts";
+import {CardView, type CardViewActions} from "./CardView.ts";
 import {CARD_HEIGHT, CARD_WIDTH, FONT_SIZE, getCardSize, onCardSizeChange} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
 import type {Card} from "../../models/MTG.ts";
@@ -115,19 +115,20 @@ export class StackView extends Container {
         const w = CARD_WIDTH * getCardSize();
         const h = CARD_HEIGHT * getCardSize();
 
+        const stackOptions: CardViewActions = {
+            leftClick: () => {
+                this.emit("cardLeftClick", {zone: this.type});
+            },
+            rightClick: () => {
+                const options = {source: this.type, actions: ["Search"]};
+                this.emit("cardRightClick", {zone: this.type, options});
+            }
+        };
+
         // Face-down rendering using CardUI when requested
         if (this.faceDown) {
-            if (this.type === "library") {
-                for (let i = 0; i < 3; i++) {
-                    const cardBack = new CardView(undefined, w, h, true);
-                    cardBack.x = i * 2;
-                    cardBack.y = i * 2;
-                    this.content.addChild(cardBack);
-                }
-            } else {
-                const cardBack = new CardView(undefined, w, h, true);
-                this.content.addChild(cardBack);
-            }
+            const cardBack = new CardView(undefined, w, h, true, stackOptions);
+            this.content.addChild(cardBack);
             this.countText.text = `${this.cards.length}`;
             return;
         }
@@ -138,7 +139,7 @@ export class StackView extends Container {
         } else {
             // Show the top card using CardUI
             const top = this.cards[this.cards.length - 1];
-            const cardTop = new CardView(top, w, h, false);
+            const cardTop = new CardView(top, w, h, false, stackOptions);
             this.content.addChild(cardTop);
             this.countText.text = `${this.cards.length}`;
         }

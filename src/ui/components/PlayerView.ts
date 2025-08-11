@@ -96,20 +96,21 @@ export class PlayerView extends Container {
         deck.setFaceDown(true);
         this.addChild(deck);
 
-        deck.on("pointerdown", (e: any) => {
+        deck.on("cardLeftClick", () => {
             if (!this.isSelf) {
                 return;
             }
-
-            const isLeftClick = typeof e?.button === "number" ? e.button === 0 : true;
-            if (!isLeftClick) {
-                return;
-            }
-
             const drawn = deck.drawCount(1);
             if (drawn && this.hand) {
                 this.hand.addCards(drawn);
             }
+        });
+        deck.on("cardRightClick", (payload: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+            // Bubble up an openMenu event with at least a Search option
+            this.emit("openMenu", payload);
         });
 
         return deck;

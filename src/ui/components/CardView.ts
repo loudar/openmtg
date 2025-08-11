@@ -4,10 +4,15 @@ import {FONT_SIZE} from "../globals.ts";
 
 // CardUI is responsible for rendering a single card (face-up or face-down)
 // Width/height are fixed per instance; callers position/scale externally as needed.
+export type CardViewActions = {
+    leftClick?: (card?: Card, e?: any) => void;
+    rightClick?: (card?: Card, e?: any) => void;
+};
+
 export class CardView extends Container {
     private content: Container = new Container();
     private static readonly HOVER_SCALE: number = 1.1;
-    private static readonly ALT_SCALE: number = 2.0;
+    private static altZoomScale: number = 2.0;
 
     private static altPressed: boolean = false;
     private static listenersSetup: boolean = false;
@@ -21,6 +26,7 @@ export class CardView extends Container {
         const onKeyDown = (e: KeyboardEvent) => {
             const next = e.altKey === true;
             if (next !== CardView.altPressed) {
+                e.preventDefault();
                 CardView.altPressed = next;
                 CardView.notifyAltChange();
             }
@@ -29,6 +35,7 @@ export class CardView extends Container {
             // If no modifier left, clear
             const next = e.altKey === true; // keyup could still have altKey if another alt is held
             if (next !== CardView.altPressed) {
+                e.preventDefault();
                 CardView.altPressed = next;
                 CardView.notifyAltChange();
             }
@@ -37,9 +44,25 @@ export class CardView extends Container {
                 CardView.notifyAltChange();
             }
         };
+        const onWheel = (e: WheelEvent) => {
+            if (!e.altKey) {
+                return;
+            }
+            // Adjust Alt zoom scale dynamically with Alt + scroll
+            // Negative deltaY typically means scroll up (zoom in)
+            const delta = -e.deltaY * 0.001;
+            CardView.altZoomScale = Math.max(1.1, Math.min(5.0, CardView.altZoomScale + delta));
+            CardView.notifyAltChange();
+            try {
+                e.preventDefault();
+            } catch {
+                // ignore
+            }
+        };
         if (typeof window !== "undefined") {
             window.addEventListener("keydown", onKeyDown);
             window.addEventListener("keyup", onKeyUp);
+            window.addEventListener("wheel", onWheel, {passive: false});
         }
         CardView.listenersSetup = true;
     }
@@ -48,6 +71,7 @@ export class CardView extends Container {
         for (const inst of CardView.instances) {
             if (inst.isHovered) {
                 inst.updateScale();
+                inst.updateDepth();
             }
         }
     }
@@ -62,32 +86,24 @@ export class CardView extends Container {
     private nameText?: Text;
 
     private isHovered: boolean = false;
+    private baseZIndex: number = 0;
+    private readonly actions?: CardViewActions;
 
-    constructor(card?: Card, width: number = 80, height: number = 110, faceDown: boolean = false) {
+    constructor(card?: Card, width: number = 80, height: number = 110, faceDown: boolean = false, actions?: CardViewActions) {
         super();
         this.w = width;
         this.h = height;
         this.faceDown = faceDown;
+        this.actions = actions;
 
         // Setup internal content container centered for proper scaling around center
         this.content.pivot.set(this.w / 2, this.h);
         this.content.position.set(this.w / 2, this.h);
         this.addChild(this.content);
 
-        CardView.setupAltListeners();
         CardView.instances.add(this);
 
-        // Enable interactions for hover
-        this.eventMode = "dynamic";
-        this.cursor = "pointer";
-        this.on("pointerover", () => {
-            this.isHovered = true;
-            this.updateScale();
-        });
-        this.on("pointerout", () => {
-            this.isHovered = false;
-            this.updateScale();
-        });
+        this.initializeInteraction();
 
         if (card) {
             this.card = card;
@@ -95,6 +111,45 @@ export class CardView extends Container {
         } else {
             this.redraw();
         }
+    }
+
+    private initializeInteraction() {
+        CardView.setupAltListeners();
+
+        // Enable interactions for hover/click
+        this.eventMode = "dynamic";
+        this.cursor = "pointer";
+        this.on("pointerover", () => {
+            this.isHovered = true;
+            this.updateScale();
+            this.updateDepth();
+        });
+        this.on("pointerout", () => {
+            this.isHovered = false;
+            this.updateScale();
+            this.updateDepth();
+        });
+        this.on("pointerdown", (e: any) => {
+            const btn = typeof e?.button === "number" ? e.button : 0;
+            if (btn === 2) {
+                if (this.actions && this.actions.rightClick) {
+                    this.actions.rightClick(this.card, e);
+                }
+                this.emit("cardRightClick", this.card, e);
+            } else {
+                if (this.actions && this.actions.leftClick) {
+                    this.actions.leftClick(this.card, e);
+                }
+                this.emit("cardLeftClick", this.card, e);
+            }
+        });
+        // Also listen to explicit rightclick event for completeness
+        this.on("rightclick", (e: any) => {
+            if (this.actions && this.actions.rightClick) {
+                this.actions.rightClick(this.card, e);
+            }
+            this.emit("cardRightClick", this.card, e);
+        });
     }
 
     private async init(): Promise<void> {
@@ -141,10 +196,25 @@ export class CardView extends Container {
 
     private updateScale(): void {
         if (this.isHovered) {
-            const target = CardView.altPressed ? CardView.ALT_SCALE : CardView.HOVER_SCALE;
+            const target = CardView.altPressed ? CardView.altZoomScale : CardView.HOVER_SCALE;
             this.content.scale.set(target, target);
         } else {
             this.content.scale.set(1, 1);
+        }
+    }
+
+    private updateDepth(): void {
+        // Bring to front when Alt is pressed and hovered
+        if (this.isHovered && CardView.altPressed) {
+            this.baseZIndex = this.zIndex || 0;
+            this.zIndex = 1000000;
+            if (this.parent) {
+                // Ensure zIndex is respected among siblings
+                this.parent.sortableChildren = true;
+            }
+        } else {
+            // restore
+            this.zIndex = this.baseZIndex;
         }
     }
 

@@ -71,8 +71,15 @@ export class HandView extends Container {
         this.cardNodes = [];
     }
 
-    private buildCardNode(card: Card): Container {
-        const node = new CardView(card, this.cardWidth, this.cardHeight, this.faceDown);
+    private buildCardNode(card: Card, index: number): Container {
+        const node = new CardView(card, this.cardWidth, this.cardHeight, this.faceDown, {
+            leftClick: () => {
+                this.playCard(index);
+            },
+            rightClick: () => {
+                this.openMenu(index);
+            }
+        });
 
         // Interactions for hover
         node.eventMode = "dynamic";
@@ -90,10 +97,21 @@ export class HandView extends Container {
         return node;
     }
 
+    private playCard(index: number) {
+        const card = this.cards[index];
+        this.emit("playCard", {card, index});
+    }
+
+    private openMenu(index: number) {
+        const card = this.cards[index];
+        const options = {source: "hand", actions: ["Play", "Details", "Move to Graveyard"]};
+        this.emit("openMenu", {card, index, options});
+    }
+
     private redraw() {
         this.clearCards();
         for (let i = 0; i < this.cards.length; i++) {
-            const node = this.buildCardNode(this.cards[i]!);
+            const node = this.buildCardNode(this.cards[i]!, i);
             node.zIndex = i; // ensure natural stacking to the right
             this.addChild(node);
             this.cardNodes.push(node);

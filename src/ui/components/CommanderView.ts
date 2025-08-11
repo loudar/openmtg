@@ -51,15 +51,15 @@ export class CommanderView extends Container {
 
             drawDashedRoundedRect(this.content, i * (w + spacing), 0, w, h, 6, 0x777777, 2, 6, 6);
 
-            const cardView = new CardView(commander, w, h, false);
-            cardView.position.set(i * (w + spacing), h + spacing);
-            cardView.eventMode = "static";
-            cardView.cursor = "pointer";
-
-            cardView.on("pointerdown", () => {
-                this.moveCommanderToInPlay(i);
+            const cardView = new CardView(commander, w, h, false, {
+                leftClick: () => {
+                    this.moveCommanderToInPlay(i);
+                },
+                rightClick: () => {
+                    this.openMenu(i);
+                }
             });
-            
+            cardView.position.set(i * (w + spacing), h + spacing);
             this.content.addChild(cardView);
         }
 
@@ -67,9 +67,15 @@ export class CommanderView extends Container {
     }
 
     private moveCommanderToInPlay(index: number) {
-        // TODO
-        
+        // TODO: actual play logic should be implemented by consumer of this component
+        this.emit("playCard", {source: "commander", index});
         this.redraw();
+    }
+
+    private openMenu(index: number) {
+        const commander = this.commanders[index];
+        const options = {source: "commander", actions: ["Cast", "View Command Zone", "Details"]};
+        this.emit("openMenu", {card: commander, index, options});
     }
 
     public override destroy(options?: any): void {
