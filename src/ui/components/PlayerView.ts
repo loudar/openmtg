@@ -2,9 +2,10 @@ import {Container, Text, TextStyle} from "pixi.js";
 import {type StackType, StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
+import {CommanderView} from "./CommanderView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
-import {CARD_HEIGHT, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
-import type {ScryfallCard} from "../../models/Scryfall.ts";
+import {CARD_HEIGHT, FONT_SIZE, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
+import type {Card} from "../../models/MTG.ts";
 
 export class PlayerView extends Container {
     public setMaxHandWidth(width: number) {
@@ -18,7 +19,8 @@ export class PlayerView extends Container {
 
     public nameLabel: Text;
     public library: StackView;
-    private attractions: null | StackView;
+    private readonly attractions: null | StackView;
+    public commanderView: CommanderView;
     public hand?: HandView;
     public graveyard: StackView;
     public exile: StackView;
@@ -34,7 +36,7 @@ export class PlayerView extends Container {
             text: info.name + (isSelf ? " (You)" : ""),
             style: new TextStyle({
                 fontFamily: "Arial",
-                fontSize: 18,
+                fontSize: FONT_SIZE,
                 fill: 0xffffff,
                 align: "left",
             }),
@@ -48,6 +50,16 @@ export class PlayerView extends Container {
         console.log(info.deck);
         this.library = this.addDeck("library", info.deck.library)!;
         this.attractions = this.addDeck("attractions", info.deck.attractions);
+
+        // Initialize commander view
+        this.commanderView = new CommanderView();
+        this.addChild(this.commanderView);
+        if (info.deck.commanders) {
+            this.commanderView.setCastableCommanders(info.deck.commanders);
+        }
+        /*if (info.deck.inPlayCommanders) {
+            this.commanderView.setInPlayCommanders(info.deck.inPlayCommanders);
+        }*/
 
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
@@ -83,7 +95,7 @@ export class PlayerView extends Container {
         this.unsubscribeCardSize = onCardSizeChange(() => this.applyScaledLayout());
     }
 
-    private addDeck(name: StackType, cards?: ScryfallCard[]) {
+    private addDeck(name: StackType, cards?: Card[]) {
         if (!cards) {
             return null;
         }
@@ -133,6 +145,11 @@ export class PlayerView extends Container {
 
         stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
         stacksLeft = this.addContainer(this.library, stacksLeft, row1);
+
+        if (this.commanderView.isVisible()) {
+            stacksLeft = this.addContainer(this.commanderView, stacksLeft, row1);
+        }
+
         this.addContainer(this.hand, stacksLeft, row1);
 
         stacksLeft = left + MARGIN;
@@ -158,6 +175,11 @@ export class PlayerView extends Container {
             }
             this.unsubscribeCardSize = undefined;
         }
+
+        if (this.commanderView) {
+            this.commanderView.destroy();
+        }
+
         super.destroy(options);
     }
 }

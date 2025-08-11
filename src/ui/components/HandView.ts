@@ -1,10 +1,10 @@
 import {Container} from "pixi.js";
 import {CardView} from "./CardView.ts";
-import type {ScryfallCard} from "../../models/Scryfall.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
+import type {Card} from "../../models/MTG.ts";
 
 export class HandView extends Container {
-    private cards: ScryfallCard[] = [];
+    private cards: Card[] = [];
     private faceDown: boolean = false;
     private defaultGap: number = 8;
     private minSpacing: number = 12; // minimal spacing between cards when heavily overlapped
@@ -22,7 +22,7 @@ export class HandView extends Container {
         return 110 * getCardSize();
     }
 
-    constructor(cards?: ScryfallCard[]) {
+    constructor(cards?: Card[]) {
         super();
         this.eventMode = "static";
         this.cursor = "default";
@@ -36,12 +36,12 @@ export class HandView extends Container {
         });
     }
 
-    public setCards(names: ScryfallCard[]) {
+    public setCards(names: Card[]) {
         this.cards = [...names];
         this.redraw();
     }
 
-    public addCards(cards: ScryfallCard[]) {
+    public addCards(cards: Card[]) {
         this.cards.push(...cards);
         this.redraw();
     }
@@ -71,7 +71,7 @@ export class HandView extends Container {
         this.cardNodes = [];
     }
 
-    private buildCardNode(card: ScryfallCard): Container {
+    private buildCardNode(card: Card): Container {
         const node = new CardView(card, this.cardWidth, this.cardHeight, this.faceDown);
 
         // Interactions for hover

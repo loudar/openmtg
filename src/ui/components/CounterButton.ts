@@ -1,4 +1,5 @@
 import {Container, Graphics, Text, TextStyle} from "pixi.js";
+import {FONT_SIZE} from "../globals.ts";
 
 export type CounterButtonStyle = {
     width?: number;
@@ -12,10 +13,13 @@ export type CounterButtonStyle = {
 };
 
 export class CounterButton extends Container {
-    private bg: Graphics;
-    private labelText: Text;
+    private readonly bg: Graphics;
+    private readonly labelText: Text;
     private _value: number;
-    private style: Required<Omit<CounterButtonStyle, "textStyle" | "label">> & { textStyle: TextStyle; label: string };
+    private readonly style: Required<Omit<CounterButtonStyle, "textStyle" | "label">> & {
+        textStyle: TextStyle;
+        label: string
+    };
 
     constructor(opts?: { value?: number; style?: CounterButtonStyle }) {
         super();
@@ -34,7 +38,11 @@ export class CounterButton extends Container {
             fill: 0x2a2a2a,
             stroke: 0x555555,
             strokeWidth: 2,
-            textStyle: new TextStyle({fontFamily: "Arial", fontSize: 18, fill: 0xffffff}),
+            textStyle: new TextStyle({
+                fontFamily: "Arial",
+                fontSize: FONT_SIZE,
+                fill: 0xffffff
+            }),
             label: "Counter",
         } as any;
 

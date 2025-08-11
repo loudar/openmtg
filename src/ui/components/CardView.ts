@@ -1,5 +1,6 @@
 import {Assets, Container, Graphics, Sprite, Text, TextStyle, Texture} from "pixi.js";
-import type {ScryfallCard} from "../../models/Scryfall.ts";
+import type {Card} from "../../models/MTG.ts";
+import {FONT_SIZE} from "../globals.ts";
 
 // CardUI is responsible for rendering a single card (face-up or face-down)
 // Width/height are fixed per instance; callers position/scale externally as needed.
@@ -51,7 +52,7 @@ export class CardView extends Container {
         }
     }
 
-    private card?: ScryfallCard;
+    private card?: Card;
     private faceDown: boolean = false;
     private readonly w: number;
     private readonly h: number;
@@ -62,7 +63,7 @@ export class CardView extends Container {
 
     private isHovered: boolean = false;
 
-    constructor(card?: ScryfallCard, width: number = 80, height: number = 110, faceDown: boolean = false) {
+    constructor(card?: Card, width: number = 80, height: number = 110, faceDown: boolean = false) {
         super();
         this.w = width;
         this.h = height;
@@ -103,7 +104,7 @@ export class CardView extends Container {
         this.redraw();
     }
 
-    public setCard(card?: ScryfallCard) {
+    public setCard(card?: Card) {
         this.card = card;
         this.redraw();
     }
@@ -125,7 +126,7 @@ export class CardView extends Container {
         // Clear only the internal content; preserve the container itself
         this.content.removeChildren();
         if (this.sprite) {
-            this.sprite.destroy({ children: true, texture: false });
+            this.sprite.destroy({children: true, texture: false});
             this.sprite = undefined;
         }
         if (this.gfx) {
@@ -154,7 +155,7 @@ export class CardView extends Container {
         const g = new Graphics();
         const fillColor = this.faceDown ? 0x444444 : 0x2e2e2e;
         const strokeColor = this.faceDown ? 0x222222 : 0x555555;
-        g.roundRect(0, 0, this.w, this.h, 6).fill(fillColor).stroke({ color: strokeColor, width: 2 });
+        g.roundRect(0, 0, this.w, this.h, 6).fill(fillColor).stroke({color: strokeColor, width: 2});
         this.content.addChild(g);
         this.gfx = g;
 
@@ -188,7 +189,13 @@ export class CardView extends Container {
             const name = this.card?.name || "Card";
             const text = new Text({
                 text: name,
-                style: new TextStyle({ fontFamily: "Arial", fontSize: 11, fill: 0xffffff, wordWrap: true, wordWrapWidth: this.w - 8 })
+                style: new TextStyle({
+                    fontFamily: "Arial",
+                    fontSize: FONT_SIZE,
+                    fill: 0xffffff,
+                    wordWrap: true,
+                    wordWrapWidth: this.w - 8
+                })
             });
             text.position.set(4, 4);
             this.content.addChild(text);

@@ -1,13 +1,14 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import {FONT_SIZE} from "../globals.ts";
 
 export class CounterView extends Container {
     private value: number;
-    private mtgLabel: string;
+    private readonly mtgLabel: string;
 
-    private bg: Graphics;
-    private minusBtn: Graphics;
-    private plusBtn: Graphics;
-    private text: Text;
+    private readonly bg: Graphics;
+    private readonly minusBtn: Graphics;
+    private readonly plusBtn: Graphics;
+    private readonly text: Text;
 
     constructor(opts?: { label?: string; value?: number }) {
         super();
@@ -28,7 +29,11 @@ export class CounterView extends Container {
 
         const minusText = new Text({
             text: "-",
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 22, fill: 0xffffff })
+            style: new TextStyle({
+                fontFamily: "Arial",
+                fontSize: FONT_SIZE,
+                fill: 0xffffff
+            })
         });
         minusText.anchor.set(0.5);
         minusText.position.set(23, 25);
@@ -42,7 +47,7 @@ export class CounterView extends Container {
 
         const plusText = new Text({
             text: "+",
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 22, fill: 0xffffff })
+            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: 0xffffff })
         });
         plusText.anchor.set(0.5);
         plusText.position.set(137, 25);
@@ -50,7 +55,7 @@ export class CounterView extends Container {
 
         this.text = new Text({
             text: `${this.mtgLabel}: ${this.value}`,
-            style: new TextStyle({ fontFamily: "Arial", fontSize: 18, fill: 0xffffff })
+            style: new TextStyle({ fontFamily: "Arial", fontSize: FONT_SIZE, fill: 0xffffff })
         });
         this.text.anchor.set(0.5);
         this.text.position.set(80, 25);
