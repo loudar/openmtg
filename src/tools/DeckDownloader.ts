@@ -1,4 +1,4 @@
-import type {CardLine, Deck} from "../models/MTG.ts";
+import type {Card, CardLine, Deck} from "../models/MTG.ts";
 import {cardLine} from "./Converters.ts";
 import {ScryfallApi} from "./ScryfallApi.ts";
 
@@ -18,11 +18,13 @@ export class DeckDownloader {
         };
 
         for (const line of cardLines) {
-            const card = mtgCards.cards.find((card) => card.name === line.name);
+            const card = mtgCards.cards.find((card) => card.name === line.name) as Card;
             if (card) {
                 const count = line.count ?? 1;
                 for (let i = 0; i < count; i++) {
+                    card.isCommander = false;
                     if (line.categories?.includes("Commander{top}")) {
+                        card.isCommander = true;
                         deck.commanders ??= [];
                         deck.commanders.push(card);
                     } else if (line.categories?.includes("Attraction{noDeck}")) {

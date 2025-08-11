@@ -113,11 +113,11 @@ export interface CanHaveErrors {
 }
 
 export interface Deck extends CanHaveErrors {
-    library: ScryfallCard[];
-    commanders?: ScryfallCard[];
-    tokens?: ScryfallCard[];
-    attractions?: ScryfallCard[];
-    hand?: ScryfallCard[];
+    library: Card[];
+    commanders?: Card[];
+    tokens?: Card[];
+    attractions?: Card[];
+    hand?: Card[];
     cardBackImageUrl?: string;
 }
 
@@ -138,4 +138,6 @@ export interface DeckImport {
 
 export interface Card extends ScryfallCard {
     inPlay?: boolean;
+    playedTimes?: number;
+    isCommander: boolean;
 }

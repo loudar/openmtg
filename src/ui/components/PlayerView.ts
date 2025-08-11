@@ -47,19 +47,11 @@ export class PlayerView extends Container {
         this.addChild(nameText);
 
         // Build decks. Decks are face-down by default.
-        console.log(info.deck);
         this.library = this.addDeck("library", info.deck.library)!;
         this.attractions = this.addDeck("attractions", info.deck.attractions);
 
-        // Initialize commander view
-        this.commanderView = new CommanderView();
+        this.commanderView = new CommanderView(info.deck.commanders ?? []);
         this.addChild(this.commanderView);
-        if (info.deck.commanders) {
-            this.commanderView.setCastableCommanders(info.deck.commanders);
-        }
-        /*if (info.deck.inPlayCommanders) {
-            this.commanderView.setInPlayCommanders(info.deck.inPlayCommanders);
-        }*/
 
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
@@ -146,7 +138,7 @@ export class PlayerView extends Container {
         stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
         stacksLeft = this.addContainer(this.library, stacksLeft, row1);
 
-        if (this.commanderView.isVisible()) {
+        if ((this.info.deck.commanders?.length ?? 0) > 0) {
             stacksLeft = this.addContainer(this.commanderView, stacksLeft, row1);
         }
 
