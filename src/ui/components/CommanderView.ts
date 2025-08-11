@@ -1,14 +1,12 @@
-import { Container, Graphics, Text } from "pixi.js";
+import {Container, Graphics, Text, TextStyle} from "pixi.js";
 import { CardView } from "./CardView.ts";
-import {CARD_HEIGHT, CARD_WIDTH, getCardSize, onCardSizeChange, MARGIN} from "../globals.ts";
+import {CARD_HEIGHT, CARD_WIDTH, getCardSize, onCardSizeChange, MARGIN, FONT_SIZE} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
 import type {Card} from "../../models/MTG.ts";
-import {TextView} from "./TextView.ts";
 
 export class CommanderView extends Container {
     private readonly frame: Graphics;
     private readonly content: Container;
-    private readonly labelText: TextView;
     private readonly commanders: Card[] = [];
 
     private unsubscribeCardSize?: () => void;
@@ -24,13 +22,6 @@ export class CommanderView extends Container {
         
         this.content = new Container();
         this.addChild(this.content);
-
-        this.labelText = new TextView({
-            text: "Commanders",
-            position: {
-                x: 0, y: 0
-            }
-        });
         this.redraw();
 
         this.unsubscribeCardSize = onCardSizeChange(() => this.redraw());
@@ -44,7 +35,6 @@ export class CommanderView extends Container {
         const h = CARD_HEIGHT * getCardSize();
         const spacing = MARGIN * getCardSize();
 
-        // Draw castable commanders (bottom row)
         for (let i = 0; i < this.commanders.length; i++) {
             const commander = this.commanders[i]!;
             commander.playedTimes ??= 0;
@@ -53,7 +43,8 @@ export class CommanderView extends Container {
 
             const cardView = new CardView(commander, w, h, false, {
                 leftClick: () => {
-                    this.moveCommanderToInPlay(i);
+                    commander.inPlay = true;
+                    this.redraw();
                 },
                 rightClick: (_c, e) => {
                     this.openMenu(i, e);
@@ -61,15 +52,18 @@ export class CommanderView extends Container {
             });
             cardView.position.set(i * (w + spacing), h + spacing);
             this.content.addChild(cardView);
+
+            const textView = new Text({
+                text: `+${commander.playedTimes * 2}`,
+                style: new TextStyle({
+                    fontFamily: "Arial",
+                    fontSize: FONT_SIZE,
+                    fill: 0xffffff
+                }),
+                position: { x: 0, y: -FONT_SIZE }
+            });
+            this.content.addChild(textView);
         }
-
-        this.addChild(this.labelText);
-    }
-
-    private moveCommanderToInPlay(index: number) {
-        // TODO: actual play logic should be implemented by consumer of this component
-        this.emit("playCard", {source: "commander", index});
-        this.redraw();
     }
 
     private openMenu(index: number, e?: any) {

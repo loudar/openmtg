@@ -158,16 +158,17 @@ export class PlayerView extends Container {
     private applyScaledLayout() {
         const row1 = this.row(1);
         const row2 = this.row(2);
+        const row3 = this.row(3);
 
         const width = window.innerWidth;
         const left = -width / 2;
 
-        this.nameLabel.position.set(left + 200, row2 - (CARD_HEIGHT / 2));
-        this.lifeCounter.position.set(left + 30, row2 - 30 - (CARD_HEIGHT / 2));
+        this.nameLabel.position.set(left + 200, row3 - (CARD_HEIGHT / 2));
+        this.lifeCounter.position.set(left + 30, row3 - 30 - (CARD_HEIGHT / 2));
         let stacksLeft = left + MARGIN;
 
+        stacksLeft = this.addContainer(this.graveyard, stacksLeft, row1);
         stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
-        stacksLeft = this.addContainer(this.library, stacksLeft, row1);
 
         if ((this.info.deck.commanders?.length ?? 0) > 0) {
             stacksLeft = this.addContainer(this.commanderView, stacksLeft, row1);
@@ -175,9 +176,8 @@ export class PlayerView extends Container {
 
         this.addContainer(this.hand, stacksLeft, row1);
 
-        stacksLeft = left + MARGIN;
-        stacksLeft = this.addContainer(this.graveyard, stacksLeft, row2);
-        this.addContainer(this.exile, stacksLeft, row2);
+        this.addContainer(this.library, left + MARGIN, row2);
+        this.addContainer(this.exile, left + MARGIN, row3);
     }
 
     private addContainer(stackView: Container | null | undefined, layoutX: number, layoutY: number) {

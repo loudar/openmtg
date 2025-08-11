@@ -6,17 +6,16 @@ export type ContextMenuItem = {
 };
 
 export class ContextMenu extends Container {
-    private backdrop: Graphics;
-    private panel: Graphics;
-    private itemsContainer: Container;
-    private isOpen: boolean = false;
-
+    private readonly backdrop: Graphics;
+    private readonly panel: Graphics;
+    private readonly itemsContainer: Container;
+    private readonly viewportWidth: number;
+    private readonly viewportHeight: number;
     private readonly itemHeight: number = 26;
-    private readonly padding: number = 8;
+    private readonly padding: number = 4;
     private readonly radius: number = 8;
 
-    private viewportWidth: number;
-    private viewportHeight: number;
+    private isOpen: boolean = false;
 
     constructor(viewportWidth: number, viewportHeight: number) {
         super();
