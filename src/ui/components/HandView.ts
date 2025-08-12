@@ -46,6 +46,27 @@ export class HandView extends Container {
         this.redraw();
     }
 
+    public removeByIds(ids: string[]): Card[] {
+        if (ids.length === 0) {
+            return [];
+        }
+        const idset = new Set(ids);
+        const kept: Card[] = [];
+        const removed: Card[] = [];
+        for (const c of this.cards) {
+            if (idset.has(c.id)) {
+                removed.push(c);
+            } else {
+                kept.push(c);
+            }
+        }
+        if (removed.length > 0) {
+            this.cards = kept;
+            this.redraw();
+        }
+        return removed;
+    }
+
     public setFaceDown(v: boolean) {
         this.faceDown = v;
         this.redraw();

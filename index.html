@@ -21,6 +21,33 @@
             outline: none;
         }
 
+        /* Dark mode form controls with unified padding */
+        input, button, textarea {
+            background-color: #111827; /* gray-900 */
+            color: #e5e7eb;            /* gray-200 */
+            border: 1px solid #374151; /* gray-700 */
+            padding: 8px 12px;         /* unified padding */
+            border-radius: 6px;
+        }
+        input::placeholder, textarea::placeholder {
+            color: #9ca3af;            /* gray-400 */
+        }
+        button {
+            cursor: pointer;
+        }
+        button:hover:not(:disabled) {
+            background-color: #1f2937; /* gray-800 */
+            border-color: #4b5563;     /* gray-600 */
+        }
+        button:disabled, input:disabled, textarea:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        input:focus, textarea:focus, button:focus {
+            outline: 2px solid #2563eb; /* blue-600 */
+            outline-offset: 1px;
+        }
+
         .sr-only {
             position: absolute;
             width: 1px;

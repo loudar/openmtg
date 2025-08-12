@@ -183,17 +183,15 @@ export function SessionApp() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={busy}
-                    style={{padding: 6}}
                 />
-                <button onClick={onCreate} disabled={busy} style={{padding: "6px 10px"}}>Create Session</button>
+                <button onClick={onCreate} disabled={busy}>Create Session</button>
                 <input
                     placeholder="Session ID to join"
                     value={sessionId}
                     onChange={(e) => setSessionId(e.target.value)}
                     disabled={busy}
-                    style={{padding: 6}}
                 />
-                <button onClick={onJoin} disabled={busy} style={{padding: "6px 10px"}}>Join Session</button>
+                <button onClick={onJoin} disabled={busy}>Join Session</button>
             </div>
 
             <textarea
@@ -202,7 +200,7 @@ export function SessionApp() {
                 value={deckInput}
                 onChange={(e) => setDeckInput(e.target.value.trim())}
                 disabled={busy}
-                style={{display: "block", width: "100%", margin: "8px 0", padding: 6}}
+                style={{display: "block", width: "100%", margin: "8px 0"}}
             />
         </div>
     );

@@ -3,10 +3,11 @@ import {type StackType, StackView} from "./StackView.ts";
 import {HandView} from "./HandView.ts";
 import {CounterButton} from "./CounterButton.ts";
 import {CommanderView} from "./CommanderView.ts";
+import {PlayedCardsView} from "./PlayedCardsView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {CARD_HEIGHT, FONT_COLOR, FONT_SIZE, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
 import type {Card} from "../../models/MTG.ts";
-import {applyMoves, compileEvent, type GameEvent, type ZoneName, type DrawCardsEvent} from "../../game/events.ts";
+import {applyMoves, compileEvent, type GameEvent, type ZoneName, type DrawCardsEvent, type MoveCardsEvent} from "../../game/events.ts";
 
 export class PlayerView extends Container {
     public setMaxHandWidth(width: number) {
@@ -23,10 +24,12 @@ export class PlayerView extends Container {
     private readonly attractions: null | StackView;
     private readonly stickers: null | StackView;
     public commanderView: CommanderView;
+    public battlefield: PlayedCardsView;
     public hand?: HandView;
     public graveyard: StackView;
     public exile: StackView;
     public lifeCounter: CounterButton;
+    private lastMoveSource?: ZoneName;
     private unsubscribeCardSize?: () => void;
 
     constructor(info: Player, isSelf: boolean) {
@@ -56,6 +59,9 @@ export class PlayerView extends Container {
         this.commanderView = new CommanderView(info.deck.commanders ?? []);
         this.addChild(this.commanderView);
 
+        this.battlefield = new PlayedCardsView(info.deck.inPlay ?? []);
+        this.addChild(this.battlefield);
+
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
 
@@ -72,6 +78,17 @@ export class PlayerView extends Container {
                     return;
                 }
                 this.emit("openMenu", payload);
+            });
+            this.hand.on("playCard", (payload: any) => {
+                if (!this.isSelf) {
+                    return;
+                }
+                const card = payload?.card as Card;
+                if (!card) {
+                    return;
+                }
+                const event: MoveCardsEvent = { type: "MOVE_CARDS", source: "hand", target: "battlefield", cardIds: [card.id] };
+                this.handleEvent(event);
             });
         }
         if (this.commanderView) {
@@ -180,7 +197,8 @@ export class PlayerView extends Container {
         this.addContainer(this.hand, stacksLeft, row1);
 
         this.addContainer(this.library, left + MARGIN, row2);
-        this.addContainer(this.exile, left + MARGIN, row3);
+        const battlefieldLeft = this.addContainer(this.exile, left + MARGIN, row3);
+        this.addContainer(this.battlefield, battlefieldLeft, row3);
     }
 
     private addContainer(stackView: Container | null | undefined, layoutX: number, layoutY: number) {
@@ -193,7 +211,7 @@ export class PlayerView extends Container {
     }
 
     // Map zone names to concrete views this PlayerView controls
-    private zoneToView(zone: ZoneName): StackView | HandView | CommanderView | null {
+    private zoneToView(zone: ZoneName): StackView | HandView | CommanderView | PlayedCardsView | null {
         switch (zone) {
             case "library":
                 return this.library;
@@ -209,12 +227,15 @@ export class PlayerView extends Container {
                 return this.stickers ?? null;
             case "command":
                 return this.commanderView;
+            case "battlefield":
+                return this.battlefield;
             default:
                 return null;
         }
     }
 
     private drawTopN(zone: ZoneName, count: number): Card[] {
+        this.lastMoveSource = zone;
         const v = this.zoneToView(zone);
         if (!v) {
             return [];
@@ -223,6 +244,22 @@ export class PlayerView extends Container {
             return v.drawCount(count) ?? [];
         }
         // Not supported for other zones
+        return [];
+    }
+
+    private removeByIds(zone: ZoneName, ids: string[]): Card[] {
+        this.lastMoveSource = zone;
+        const v = this.zoneToView(zone);
+        if (!v) {
+            return [];
+        }
+        if (v instanceof HandView) {
+            return v.removeByIds(ids);
+        }
+        if (v instanceof StackView) {
+            // Not implemented for stacks yet: fallback to draw top if ids length provided
+            return [];
+        }
         return [];
     }
 
@@ -242,6 +279,12 @@ export class PlayerView extends Container {
             v.addCards(cards);
             return;
         }
+        if (v instanceof PlayedCardsView) {
+            const from = this.lastMoveSource ?? "hand";
+            const played = cards.map(c => ({ card: c, playedFrom: from }));
+            v.addCards(played);
+            return;
+        }
         // Commander zone currently displayed via CommanderView; adding to it is a no-op for now
     }
 
@@ -249,6 +292,7 @@ export class PlayerView extends Container {
         const compiled = compileEvent(event);
         applyMoves({
             drawTopN: (z, c) => this.drawTopN(z, c),
+            removeByIds: (z, ids) => this.removeByIds(z, ids),
             pushCards: (z, cs) => this.pushCards(z, cs)
         }, compiled, {
             preferCommandZoneForCommander: event.type === "MOVE_CARDS" ? event.preferCommandZoneForCommander === true : false

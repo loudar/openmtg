@@ -112,6 +112,13 @@ export interface CanHaveErrors {
     errors?: string[];
 }
 
+import type { ZoneName } from "../game/events.ts";
+
+export interface PlayedCard {
+    card: Card;
+    playedFrom: ZoneName;
+}
+
 export interface Deck extends CanHaveErrors {
     library: Card[];
     commanders?: Card[];
@@ -119,6 +126,7 @@ export interface Deck extends CanHaveErrors {
     attractions?: Card[];
     stickers?: Card[];
     hand?: Card[];
+    inPlay?: PlayedCard[];
     cardBackImageUrl?: string;
 }
 
