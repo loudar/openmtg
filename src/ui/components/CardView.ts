@@ -7,6 +7,9 @@ import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
 export type CardViewActions = {
     leftClick?: (card?: Card, e?: any) => void;
     rightClick?: (card?: Card, e?: any) => void;
+    // Enable simple dragging; when true, left click is deferred until pointer up if no drag occurred
+    draggable?: boolean;
+    onDragEnd?: (card?: Card, global?: { x: number; y: number }) => void;
 };
 
 export class CardView extends Container {
@@ -129,27 +132,105 @@ export class CardView extends Container {
             this.updateScale();
             this.updateDepth();
         });
-        this.on("pointerdown", (e: any) => {
-            const btn = typeof e?.button === "number" ? e.button : 0;
-            if (btn === 2) {
+
+        // If draggable enabled, use drag-aware handlers; otherwise keep immediate click behavior
+        if (this.actions && this.actions.draggable) {
+            let dragging = false;
+            let down = false;
+            let startGlobal = { x: 0, y: 0 } as any;
+            let startLocal = { x: 0, y: 0 } as any;
+            let origPos = { x: 0, y: 0 } as any;
+
+            this.on("pointerdown", (e: any) => {
+                const btn = typeof e?.button === "number" ? e.button : 0;
+                if (btn === 2) {
+                    if (this.actions && this.actions.rightClick) {
+                        this.actions.rightClick(this.card, e);
+                    }
+                    this.emit("cardRightClick", this.card, e);
+                    return;
+                }
+                down = true;
+                dragging = false;
+                startGlobal = { x: e.global.x, y: e.global.y };
+                startLocal = this.parent ? this.parent.toLocal(e.global) : { x: 0, y: 0 };
+                origPos = { x: this.x, y: this.y };
+                this.alpha = 0.95;
+                this.zIndex = 999999;
+                if (this.parent) {
+                    this.parent.sortableChildren = true;
+                }
+            });
+            this.on("pointermove", (e: any) => {
+                if (!down) {
+                    return;
+                }
+                const currentLocal = this.parent ? this.parent.toLocal(e.global) : { x: 0, y: 0 };
+                const dx = currentLocal.x - startLocal.x;
+                const dy = currentLocal.y - startLocal.y;
+                if (!dragging) {
+                    const mdx = e.global.x - startGlobal.x;
+                    const mdy = e.global.y - startGlobal.y;
+                    const dist2 = (mdx * mdx) + (mdy * mdy);
+                    if (dist2 > 25) {
+                        dragging = true;
+                    }
+                }
+                if (dragging) {
+                    this.position.set(origPos.x + dx, origPos.y + dy);
+                }
+            });
+            const finish = (e: any) => {
+                if (!down) {
+                    return;
+                }
+                down = false;
+                this.alpha = 1;
+                // Snap back
+                this.position.set(origPos.x, origPos.y);
+                const wasDragging = dragging;
+                dragging = false;
+                if (wasDragging) {
+                    if (this.actions && this.actions.onDragEnd) {
+                        try {
+                            this.actions.onDragEnd(this.card, { x: e.global.x, y: e.global.y });
+                        } catch {
+                            // ignore errors from consumer
+                        }
+                    }
+                } else {
+                    // Treat as a click if no drag
+                    if (this.actions && this.actions.leftClick) {
+                        this.actions.leftClick(this.card, e);
+                    }
+                    this.emit("cardLeftClick", this.card, e);
+                }
+            };
+            this.on("pointerup", finish);
+            this.on("pointerupoutside", finish);
+        } else {
+            this.on("pointerdown", (e: any) => {
+                const btn = typeof e?.button === "number" ? e.button : 0;
+                if (btn === 2) {
+                    if (this.actions && this.actions.rightClick) {
+                        this.actions.rightClick(this.card, e);
+                    }
+                    this.emit("cardRightClick", this.card, e);
+                } else {
+                    if (this.actions && this.actions.leftClick) {
+                        this.actions.leftClick(this.card, e);
+                    }
+                    this.emit("cardLeftClick", this.card, e);
+                }
+            });
+            // Also listen to explicit rightclick event for completeness
+            this.on("rightclick", (e: any) => {
                 if (this.actions && this.actions.rightClick) {
                     this.actions.rightClick(this.card, e);
                 }
                 this.emit("cardRightClick", this.card, e);
-            } else {
-                if (this.actions && this.actions.leftClick) {
-                    this.actions.leftClick(this.card, e);
-                }
-                this.emit("cardLeftClick", this.card, e);
-            }
-        });
-        // Also listen to explicit rightclick event for completeness
-        this.on("rightclick", (e: any) => {
-            if (this.actions && this.actions.rightClick) {
-                this.actions.rightClick(this.card, e);
-            }
-            this.emit("cardRightClick", this.card, e);
-        });
+            });
+        }
     }
 
     private async init(): Promise<void> {

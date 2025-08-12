@@ -61,6 +61,12 @@ export class PlayerView extends Container {
 
         this.battlefield = new PlayedCardsView(info.deck.inPlay ?? []);
         this.addChild(this.battlefield);
+        this.battlefield.on("cardDragEnd", (payload: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+            this.handleCardDragDrop(payload);
+        });
 
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
@@ -89,6 +95,12 @@ export class PlayerView extends Container {
                 }
                 const event: MoveCardsEvent = { type: "MOVE_CARDS", source: "hand", target: "battlefield", cardIds: [card.id] };
                 this.handleEvent(event);
+            });
+            this.hand.on("cardDragEnd", (payload: any) => {
+                if (!this.isSelf) {
+                    return;
+                }
+                this.handleCardDragDrop(payload);
             });
         }
         if (this.commanderView) {
@@ -256,6 +268,9 @@ export class PlayerView extends Container {
         if (v instanceof HandView) {
             return v.removeByIds(ids);
         }
+        if (v instanceof PlayedCardsView) {
+            return v.removeByIds(ids);
+        }
         if (v instanceof StackView) {
             // Not implemented for stacks yet: fallback to draw top if ids length provided
             return [];
@@ -297,6 +312,27 @@ export class PlayerView extends Container {
         }, compiled, {
             preferCommandZoneForCommander: event.type === "MOVE_CARDS" ? event.preferCommandZoneForCommander === true : false
         });
+    }
+
+    private handleCardDragDrop(payload: { source: ZoneName; card: Card; index?: number; global: { x: number; y: number } }) {
+        const target = this.dropTargetAt(payload.global.x, payload.global.y);
+        if (!target) {
+            return;
+        }
+        const event: MoveCardsEvent = { type: "MOVE_CARDS", source: payload.source, target, cardIds: [payload.card.id] };
+        this.handleEvent(event);
+    }
+
+    private dropTargetAt(x: number, y: number): ZoneName | null {
+        const gy = this.graveyard.getBounds();
+        if (x >= gy.x && x <= gy.x + gy.width && y >= gy.y && y <= gy.y + gy.height) {
+            return "graveyard";
+        }
+        const ex = this.exile.getBounds();
+        if (x >= ex.x && x <= ex.x + ex.width && y >= ex.y && y <= ex.y + ex.height) {
+            return "exile";
+        }
+        return null;
     }
 
     public override destroy(options?: any): void {

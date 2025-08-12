@@ -99,6 +99,10 @@ export class HandView extends Container {
             },
             rightClick: (_c, e) => {
                 this.openMenu(index, e);
+            },
+            draggable: true,
+            onDragEnd: (_c, global) => {
+                this.emit("cardDragEnd", { source: "hand", card, index, global });
             }
         });
 

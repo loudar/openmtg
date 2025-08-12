@@ -54,6 +54,27 @@ export class PlayedCardsView extends Container {
         this.redraw();
     }
 
+    public removeByIds(ids: string[]): Card[] {
+        if (ids.length === 0) {
+            return [];
+        }
+        const idset = new Set(ids);
+        const kept: PlayedCard[] = [];
+        const removed: Card[] = [];
+        for (const pc of this.played) {
+            if (idset.has(pc.card.id)) {
+                removed.push(pc.card);
+            } else {
+                kept.push(pc);
+            }
+        }
+        if (removed.length > 0) {
+            this.played = kept;
+            this.redraw();
+        }
+        return removed;
+    }
+
     private clearChildren(container: Container) {
         container.removeChildren();
         for (const c of container.children) {
@@ -100,6 +121,10 @@ export class PlayedCardsView extends Container {
                     const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
                     const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
                     this.emit("openMenu", { card, options: { source: "battlefield", actions: ["Details"] }, position: { x: gx, y: gy } });
+                },
+                draggable: true,
+                onDragEnd: (_c, global) => {
+                    this.emit("cardDragEnd", { source: "battlefield", card, global });
                 }
             });
             node.x = x;
