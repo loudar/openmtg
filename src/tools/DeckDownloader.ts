@@ -39,6 +39,9 @@ export class DeckDownloader {
                     } else if (line.categories?.some(c => c.startsWith("Attraction"))) {
                         deck.attractions ??= [];
                         deck.attractions.push(card);
+                    } else if (line.categories?.some(c => c.startsWith("Stickers"))) {
+                        deck.stickers ??= [];
+                        deck.stickers.push(card);
                     } else {
                         deck.library.push(card);
                     }

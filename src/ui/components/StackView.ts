@@ -4,7 +4,7 @@ import {CARD_HEIGHT, CARD_WIDTH, FONT_COLOR, FONT_SIZE, getCardSize, onCardSizeC
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
 import type {Card} from "../../models/MTG.ts";
 
-export type StackType = "library" | "graveyard" | "exile" | "attractions";
+export type StackType = "library" | "graveyard" | "exile" | "attractions" | "stickers";
 
 export class StackView extends Container {
     private readonly frame: Graphics;

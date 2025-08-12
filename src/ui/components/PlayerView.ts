@@ -20,6 +20,7 @@ export class PlayerView extends Container {
     public nameLabel: Text;
     public library: StackView;
     private readonly attractions: null | StackView;
+    private readonly stickers: null | StackView;
     public commanderView: CommanderView;
     public hand?: HandView;
     public graveyard: StackView;
@@ -49,6 +50,7 @@ export class PlayerView extends Container {
         // Build decks. Decks are face-down by default.
         this.library = this.addDeck("library", info.deck.library)!;
         this.attractions = this.addDeck("attractions", info.deck.attractions);
+        this.stickers = this.addDeck("stickers", info.deck.stickers);
 
         this.commanderView = new CommanderView(info.deck.commanders ?? []);
         this.addChild(this.commanderView);
@@ -169,6 +171,7 @@ export class PlayerView extends Container {
 
         stacksLeft = this.addContainer(this.graveyard, stacksLeft, row1);
         stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
+        stacksLeft = this.addContainer(this.stickers, stacksLeft, row1);
 
         if ((this.info.deck.commanders?.length ?? 0) > 0) {
             stacksLeft = this.addContainer(this.commanderView, stacksLeft, row1);
