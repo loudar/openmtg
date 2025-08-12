@@ -1,4 +1,5 @@
 import {Application, Container, Assets} from "pixi.js";
+import { NotificationBanner } from "./NotificationBanner.ts";
 import {PlayerView} from "./PlayerView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {getSessionPublic} from "../../client/sessionClient.ts";
@@ -87,6 +88,20 @@ export class GameView {
             // Build initial player views
             await this.rebuildPlayerViews();
             this.layoutPlayers();
+
+            // Show deck error notification for the local player, if any
+            try {
+                const local = this.players.find(p => p.id === this.localPlayerId);
+                if (local && local.deck && Array.isArray((local.deck as any).errors) && (local.deck as any).errors.length > 0) {
+                    const msg = (local.deck as any).errors.join("\n");
+                    const banner = new NotificationBanner(`Deck errors:\n${msg}`, { durationMs: 7000, width: 420, height: 56 });
+                    banner.position.set(12, 12);
+                    banner.zIndex = 10000;
+                    this.stage.addChild(banner);
+                }
+            } catch {
+                // ignore notification errors
+            }
 
             // Subscribe to WS for player join/left
             if (this.ws) {

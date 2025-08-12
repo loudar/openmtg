@@ -66,6 +66,14 @@ export class StackView extends Container {
         this.redraw();
     }
 
+    addCards(cards: Card[]) {
+        if (cards.length === 0) {
+            return;
+        }
+        this.cards.push(...cards);
+        this.redraw();
+    }
+
     public drawTop(): Card | undefined {
         if (this.cards.length === 0) {
             return undefined;
@@ -79,8 +87,9 @@ export class StackView extends Container {
         if (this.cards.length === 0) {
             return undefined;
         }
-
-        const c = this.cards.splice(this.cards.length - count - 1, count);
+        const take = Math.min(count, this.cards.length);
+        const start = this.cards.length - take;
+        const c = this.cards.splice(start, take);
         this.redraw();
         return c;
     }

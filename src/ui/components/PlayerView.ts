@@ -6,6 +6,7 @@ import {CommanderView} from "./CommanderView.ts";
 import type {Player} from "../../server/sessionTypes.ts";
 import {CARD_HEIGHT, FONT_COLOR, FONT_SIZE, getCardSize, MARGIN, onCardSizeChange} from "../globals.ts";
 import type {Card} from "../../models/MTG.ts";
+import {applyMoves, compileEvent, type GameEvent, type ZoneName, type DrawCardsEvent} from "../../game/events.ts";
 
 export class PlayerView extends Container {
     public setMaxHandWidth(width: number) {
@@ -132,10 +133,9 @@ export class PlayerView extends Container {
             if (!this.isSelf) {
                 return;
             }
-            const drawn = deck.drawCount(1);
-            if (drawn && this.hand) {
-                this.hand.addCards(drawn);
-            }
+            // Use the generic event handler to process a draw event
+            const event: DrawCardsEvent = { type: "DRAW_CARDS", count: 1, from: name as any, to: "hand" };
+            this.handleEvent(event);
         });
         deck.on("cardRightClick", (payload: any) => {
             if (!this.isSelf) {
@@ -190,6 +190,69 @@ export class PlayerView extends Container {
 
         stackView.position.set(layoutX, layoutY);
         return layoutX + 100 * getCardSize();
+    }
+
+    // Map zone names to concrete views this PlayerView controls
+    private zoneToView(zone: ZoneName): StackView | HandView | CommanderView | null {
+        switch (zone) {
+            case "library":
+                return this.library;
+            case "hand":
+                return this.hand ?? null;
+            case "graveyard":
+                return this.graveyard;
+            case "exile":
+                return this.exile;
+            case "attractions":
+                return this.attractions ?? null;
+            case "stickers":
+                return this.stickers ?? null;
+            case "command":
+                return this.commanderView;
+            default:
+                return null;
+        }
+    }
+
+    private drawTopN(zone: ZoneName, count: number): Card[] {
+        const v = this.zoneToView(zone);
+        if (!v) {
+            return [];
+        }
+        if (v instanceof StackView) {
+            return v.drawCount(count) ?? [];
+        }
+        // Not supported for other zones
+        return [];
+    }
+
+    private pushCards(zone: ZoneName, cards: Card[]) {
+        if (cards.length === 0) {
+            return;
+        }
+        const v = this.zoneToView(zone);
+        if (!v) {
+            return;
+        }
+        if (v instanceof HandView) {
+            v.addCards(cards);
+            return;
+        }
+        if (v instanceof StackView) {
+            v.addCards(cards);
+            return;
+        }
+        // Commander zone currently displayed via CommanderView; adding to it is a no-op for now
+    }
+
+    public handleEvent(event: GameEvent) {
+        const compiled = compileEvent(event);
+        applyMoves({
+            drawTopN: (z, c) => this.drawTopN(z, c),
+            pushCards: (z, cs) => this.pushCards(z, cs)
+        }, compiled, {
+            preferCommandZoneForCommander: event.type === "MOVE_CARDS" ? event.preferCommandZoneForCommander === true : false
+        });
     }
 
     public override destroy(options?: any): void {
