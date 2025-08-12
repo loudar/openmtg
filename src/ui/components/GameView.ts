@@ -80,7 +80,7 @@ export class GameView {
             }
 
             try {
-                await Assets.load("http://localhost:3000/img/cardBack.jpg");
+                await Assets.load("http://localhost:3000/img/cardBack.png");
             } catch (e) {
                 console.warn("Failed to preload assets:", e);
             }

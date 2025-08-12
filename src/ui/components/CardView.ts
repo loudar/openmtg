@@ -14,8 +14,8 @@ export type CardViewActions = {
 
 export class CardView extends Container {
     private content: Container = new Container();
-    private static readonly HOVER_SCALE: number = 1.1;
-    private static altZoomScale: number = 2.0;
+    private static readonly HOVER_SCALE: number = 1.5;
+    private static altZoomScale: number = 4.0;
 
     private static altPressed: boolean = false;
     private static listenersSetup: boolean = false;
@@ -53,7 +53,7 @@ export class CardView extends Container {
             }
             // Adjust Alt zoom scale dynamically with Alt + scroll
             // Negative deltaY typically means scroll up (zoom in)
-            const delta = -e.deltaY * 0.001;
+            const delta = -e.deltaY * 0.002;
             CardView.altZoomScale = Math.max(1.1, Math.min(5.0, CardView.altZoomScale + delta));
             CardView.notifyAltChange();
             try {
@@ -89,7 +89,6 @@ export class CardView extends Container {
     private nameText?: Text;
 
     private isHovered: boolean = false;
-    private baseZIndex: number = 0;
     private readonly actions?: CardViewActions;
 
     constructor(card?: Card, width: number = 80, height: number = 110, faceDown: boolean = false, actions?: CardViewActions) {
@@ -298,25 +297,10 @@ export class CardView extends Container {
     private redraw() {
         this.clear();
 
-        // Base rounded rectangle (used as fallback and base frame)
-        const g = new Graphics();
-        const fillColor = this.faceDown ? 0x444444 : 0x2e2e2e;
-        const strokeColor = this.faceDown ? 0x222222 : 0x555555;
-        g.roundRect(0, 0, this.w, this.h, 6).fill(fillColor).stroke({color: strokeColor, width: 2});
-        this.content.addChild(g);
-        this.gfx = g;
-
         if (this.faceDown) {
             // Try to draw card back texture
             try {
-                const tex = Texture.from("http://localhost:3000/img/cardBack.jpg");
-                const spr = new Sprite(tex);
-                spr.width = this.w;
-                spr.height = this.h;
-                spr.x = 0;
-                spr.y = 0;
-                this.sprite = spr;
-                this.content.addChild(spr);
+                this.addSpriteFromTexture("http://localhost:3000/img/cardBack.png");
             } catch {
                 // keep fallback base graphics
             }
@@ -324,14 +308,7 @@ export class CardView extends Container {
         }
 
         if (this.card?.image_uris) {
-            const tex = Texture.from(this.card.image_uris.normal);
-            const spr = new Sprite(tex);
-            spr.width = this.w;
-            spr.height = this.h;
-            spr.x = 0;
-            spr.y = 0;
-            this.sprite = spr;
-            this.content.addChild(spr);
+            this.addSpriteFromTexture(this.card.image_uris.normal);
         } else {
             const name = this.card?.name || "Card";
             const text = new Text({
@@ -348,6 +325,17 @@ export class CardView extends Container {
             this.content.addChild(text);
             this.nameText = text;
         }
+    }
+
+    private addSpriteFromTexture(src: string) {
+        const tex = Texture.from(src);
+        const spr = new Sprite(tex);
+        spr.width = this.w;
+        spr.height = this.h;
+        spr.x = 0;
+        spr.y = 0;
+        this.sprite = spr;
+        this.content.addChild(spr);
     }
 
     public override destroy(options?: any): void {
