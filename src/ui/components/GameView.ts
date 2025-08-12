@@ -183,7 +183,18 @@ export class GameView {
                     const items = actions.map((label: string) => ({
                         label,
                         onClick: () => {
-                            // Placeholder: future action dispatch can go here
+                            // Handle context actions
+                            if (label === "Shuffle") {
+                                const source = payload?.options?.source;
+                                if (source === "library") {
+                                    try {
+                                        view.library.shuffle();
+                                    } catch {
+                                        // ignore errors from shuffle
+                                    }
+                                }
+                            }
+                            // Other actions like "Search" can be handled elsewhere
                         }
                     }));
                     const pos = payload?.position ?? {x: (this.app.renderer.width as number) / 2, y: (this.app.renderer.height as number) / 2};

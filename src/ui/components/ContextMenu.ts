@@ -1,5 +1,5 @@
 import { Container, Graphics, Text, TextStyle } from "pixi.js";
-import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE, RADIUS} from "../globals.ts";
 
 export type ContextMenuItem = {
     label: string;
@@ -14,7 +14,6 @@ export class ContextMenu extends Container {
     private readonly viewportHeight: number;
     private readonly itemHeight: number = 26;
     private readonly padding: number = 4;
-    private readonly radius: number = 8;
 
     private isOpen: boolean = false;
 
@@ -77,7 +76,7 @@ export class ContextMenu extends Container {
 
         // Draw panel with rounded corners
         this.panel.clear();
-        this.panel.roundRect(0, 0, totalWidth, totalHeight, this.radius)
+        this.panel.roundRect(0, 0, totalWidth, totalHeight, RADIUS)
             .fill(0x1a1a1a)
             .stroke({color: 0x444444, width: 1});
 

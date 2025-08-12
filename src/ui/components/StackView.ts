@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle } from "pixi.js";
+import { Container, Graphics, Text, TextStyle, Ticker } from "pixi.js";
 import {CardView, type CardViewActions} from "./CardView.ts";
 import {CARD_HEIGHT, CARD_WIDTH, FONT_COLOR, FONT_SIZE, getCardSize, onCardSizeChange} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
@@ -15,6 +15,8 @@ export class StackView extends Container {
     private cards: Card[] = [];
     private faceDown: boolean = false;
     private unsubscribeCardSize?: () => void;
+    private isAnimating: boolean = false;
+    private activeShuffleTick?: (delta: number) => void;
 
     constructor(type: StackType, cards?: Card[]) {
         super();
@@ -118,6 +120,18 @@ export class StackView extends Container {
         }
     }
 
+    public shuffle(): void {
+        // Fisher–Yates shuffle
+        for (let i = this.cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const tmp = this.cards[i];
+            this.cards[i] = this.cards[j]!;
+            this.cards[j] = tmp!;
+        }
+        this.redraw();
+        this.playShuffleAnimation();
+    }
+
     private redraw() {
         // Clear previous content and frame
         this.content.removeChildren();
@@ -131,7 +145,8 @@ export class StackView extends Container {
                 this.emit("cardLeftClick", {zone: this.type});
             },
             rightClick: (_c, e) => {
-                const options = {source: this.type, actions: ["Search"]};
+                const actions = this.type === "library" ? ["Search", "Shuffle"] : ["Search"];
+                const options = {source: this.type, actions};
                 const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
                 const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
                 this.emit("cardRightClick", {zone: this.type, options, position: {x: gx, y: gy}});
@@ -158,6 +173,51 @@ export class StackView extends Container {
         }
     }
 
+    private playShuffleAnimation(): void {
+        if (this.cards.length === 0) {
+            return;
+        }
+        if (this.isAnimating) {
+            return;
+        }
+        this.isAnimating = true;
+
+        const c = this.content;
+        const startX = c.x;
+        const startY = c.y;
+        const startR = c.rotation;
+        const duration = 380; // ms, short and snappy
+        const ampX = 6; // px
+        const rotAmp = 0.09; // radians (~5 degrees)
+        const waves = 3.5; // number of wiggles
+
+        const start = (typeof performance !== "undefined" ? performance.now() : Date.now());
+        const tick = (_delta: number) => {
+            const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+            const t = Math.min(1, (now - start) / duration);
+            const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
+            const phase = ease * Math.PI * 2 * waves;
+            c.x = startX + Math.sin(phase) * ampX * (1 - t);
+            c.rotation = startR + Math.sin(phase) * rotAmp * (1 - t);
+            if (t >= 1) {
+                c.x = startX;
+                c.y = startY;
+                c.rotation = startR;
+                if (this.activeShuffleTick) {
+                    try {
+                        Ticker.shared.remove(this.activeShuffleTick);
+                    } catch {
+                        // ignore
+                    }
+                }
+                this.activeShuffleTick = undefined;
+                this.isAnimating = false;
+            }
+        };
+        this.activeShuffleTick = tick;
+        Ticker.shared.add(tick);
+    }
+
     // Ensure we detach listener when destroyed
     public override destroy(options?: any): void {
         if (this.unsubscribeCardSize) {
@@ -167,6 +227,14 @@ export class StackView extends Container {
                 // ignore unsubscribe errors
             }
             this.unsubscribeCardSize = undefined;
+        }
+        if (this.activeShuffleTick) {
+            try {
+                Ticker.shared.remove(this.activeShuffleTick);
+            } catch {
+                // ignore ticker remove errors
+            }
+            this.activeShuffleTick = undefined;
         }
         super.destroy(options);
     }

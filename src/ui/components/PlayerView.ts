@@ -126,7 +126,7 @@ export class PlayerView extends Container {
         });
 
         // Add life counter per player
-        this.lifeCounter = new CounterButton({value: 20, style: {label: "Life", fill: 0x1e1e1e, stroke: 0x444444}});
+        this.lifeCounter = new CounterButton({value: 40, style: {label: "♥️", fill: 0x1e1e1e, stroke: 0x444444}});
         this.addChild(this.lifeCounter);
 
         // Visibility rules: only local player's hand/GY/exile are revealed; others are face-down.

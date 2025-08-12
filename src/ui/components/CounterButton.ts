@@ -1,5 +1,5 @@
 import {Container, Graphics, Text, TextStyle} from "pixi.js";
-import {FONT_COLOR, FONT_SIZE} from "../globals.ts";
+import {FONT_COLOR, FONT_SIZE, RADIUS} from "../globals.ts";
 
 export type CounterButtonStyle = {
     width?: number;
@@ -32,15 +32,15 @@ export class CounterButton extends Container {
             textStyle: TextStyle;
             label: string
         } = {
-            width: 120,
+            width: 100,
             height: 44,
-            radius: 8,
-            fill: 0x2a2a2a,
-            stroke: 0x555555,
-            strokeWidth: 2,
+            radius: RADIUS,
+            fill: 0x252525,
+            stroke: 0xdddddd,
+            strokeWidth: 1,
             textStyle: new TextStyle({
                 fontFamily: "Arial",
-                fontSize: FONT_SIZE,
+                fontSize: FONT_SIZE + 4,
                 fill: FONT_COLOR
             }),
             label: "Counter",
@@ -63,7 +63,7 @@ export class CounterButton extends Container {
         this.addChild(this.bg);
 
         this.labelText = new Text({
-            text: `${this.style.label}: ${this._value}`,
+            text: `${this.style.label} ${this._value}`,
             style: this.style.textStyle,
         });
         this.labelText.anchor.set(0.5);
@@ -115,6 +115,6 @@ export class CounterButton extends Container {
     }
 
     private refreshLabel() {
-        this.labelText.text = `${this.style.label}: ${this._value}`;
+        this.labelText.text = `${this.style.label} ${this._value}`;
     }
 }

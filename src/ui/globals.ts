@@ -32,5 +32,6 @@ export function onCardSizeChange(listener: (v: number) => void): () => void {
 export const CARD_WIDTH = 80;
 export const CARD_HEIGHT = 110;
 export const MARGIN = 30;
-export const FONT_SIZE = 15;
+export const FONT_SIZE = 14;
 export const FONT_COLOR = 0xffffff;
+export const RADIUS = 8;
