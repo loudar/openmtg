@@ -12,6 +12,7 @@ import {
 import {DeckDownloader} from "./tools/DeckDownloader.ts";
 import * as path from "node:path";
 import {ScryfallApi} from "./tools/ScryfallApi.ts";
+import {processServerMessage} from "./server/eventHandling.ts";
 
 const PORT = 3000;
 
@@ -185,16 +186,18 @@ wss.on("connection", (ws, req) => {
     });
 
     ws.on("message", (data) => {
-        let payload: string;
+        let payloadText: string;
         if (typeof data === "string") {
-            payload = data;
+            payloadText = data;
         } else if (data instanceof Buffer || data instanceof Uint8Array) {
-            payload = data.toString();
+            payloadText = data.toString();
         } else {
-            payload = String(data);
+            payloadText = String(data);
         }
 
-        const wrapped = JSON.stringify({type: "relay", from: playerId, payload});
+        processServerMessage(s, payloadText);
+
+        const wrapped = JSON.stringify({ type: "relay", from: playerId, payload: payloadText });
         for (const peer of set) {
             if (peer !== ws && peer.readyState === WebSocket.OPEN) {
                 peer.send(wrapped);

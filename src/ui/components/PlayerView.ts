@@ -69,13 +69,13 @@ export class PlayerView extends Container {
         });
 
 
-        this.graveyard = new StackView("graveyard", []);
+        this.graveyard = new StackView("graveyard", (this.info.deck as any).graveyard ?? []);
         this.addChild(this.graveyard);
 
-        this.exile = new StackView("exile", []);
+        this.exile = new StackView("exile", (this.info.deck as any).exile ?? []);
         this.addChild(this.exile);
 
-        this.hand = new HandView([]);
+        this.hand = new HandView(this.info.deck.hand ?? []);
         this.addChild(this.hand);
 
         // Bubble openMenu from children
