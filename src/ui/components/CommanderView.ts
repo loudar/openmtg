@@ -56,8 +56,6 @@ export class CommanderView extends Container {
             if (commander.inPlay) {
                 cardView.position.set(i * (w + spacing), -(h + spacing));
             }
-            this.content.addChild(cardView);
-
             const textView = new Text({
                 text: `+${commander.playedTimes * 2}`,
                 style: new TextStyle({
@@ -68,6 +66,7 @@ export class CommanderView extends Container {
                 position: { x: 0, y: -FONT_SIZE }
             });
             this.content.addChild(textView);
+            this.content.addChild(cardView);
         }
     }
 

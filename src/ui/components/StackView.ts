@@ -24,8 +24,6 @@ export class StackView extends Container {
 
         this.frame = new Graphics();
         this.addChild(this.frame);
-        this.content = new Container();
-        this.addChild(this.content);
 
         this.labelText = new Text({
             text: this.typeLabel(),
@@ -45,6 +43,10 @@ export class StackView extends Container {
         this.countText.anchor.set(0.5);
         this.countText.position.set(40, 55);
         this.addChild(this.countText);
+
+        this.content = new Container();
+        this.addChild(this.content);
+
 
         if (cards) {
             this.cards = [...cards];
