@@ -1,4 +1,4 @@
-let _cardSize = 2;
+let _cardSize = 1;
 const _listeners: Array<(v: number) => void> = [];
 
 export function getCardSize(): number {

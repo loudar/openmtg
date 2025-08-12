@@ -285,17 +285,13 @@ export class CardView extends Container {
     }
 
     private updateDepth(): void {
-        // Bring to front when Alt is pressed and hovered
         if (this.isHovered && CardView.altPressed) {
-            this.baseZIndex = this.zIndex || 0;
             this.zIndex = 1000000;
             if (this.parent) {
-                // Ensure zIndex is respected among siblings
                 this.parent.sortableChildren = true;
             }
         } else {
-            // restore
-            this.zIndex = this.baseZIndex;
+            this.zIndex = 0;
         }
     }
 

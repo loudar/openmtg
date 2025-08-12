@@ -199,18 +199,19 @@ export class PlayerView extends Container {
         let stacksLeft = left + MARGIN;
 
         stacksLeft = this.addContainer(this.graveyard, stacksLeft, row1);
-        stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
-        stacksLeft = this.addContainer(this.stickers, stacksLeft, row1);
-
-        if ((this.info.deck.commanders?.length ?? 0) > 0) {
+        const commanderCount = (this.info.deck.commanders?.length ?? 0);
+        if (commanderCount > 0) {
             stacksLeft = this.addContainer(this.commanderView, stacksLeft, row1);
         }
+
+        stacksLeft = this.addContainer(this.attractions, stacksLeft, row1);
+        stacksLeft = this.addContainer(this.stickers, stacksLeft, row1);
 
         this.addContainer(this.hand, stacksLeft, row1);
 
         this.addContainer(this.library, left + MARGIN, row2);
         const battlefieldLeft = this.addContainer(this.exile, left + MARGIN, row3);
-        this.addContainer(this.battlefield, battlefieldLeft, row3);
+        this.addContainer(this.battlefield, battlefieldLeft + (commanderCount * (100 * getCardSize())), row3);
     }
 
     private addContainer(stackView: Container | null | undefined, layoutX: number, layoutY: number) {

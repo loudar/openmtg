@@ -43,14 +43,19 @@ export class CommanderView extends Container {
 
             const cardView = new CardView(commander, w, h, false, {
                 leftClick: () => {
-                    commander.inPlay = true;
+                    commander.inPlay = !commander.inPlay;
+                    if (!commander.inPlay) {
+                        commander.playedTimes!++;
+                    }
                     this.redraw();
                 },
                 rightClick: (_c, e) => {
                     this.openMenu(i, e);
                 }
             });
-            cardView.position.set(i * (w + spacing), h + spacing);
+            if (commander.inPlay) {
+                cardView.position.set(i * (w + spacing), -(h + spacing));
+            }
             this.content.addChild(cardView);
 
             const textView = new Text({
