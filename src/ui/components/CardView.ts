@@ -20,6 +20,7 @@ export class CardView extends Container {
     private static altPressed: boolean = false;
     private static listenersSetup: boolean = false;
     private static instances: Set<CardView> = new Set<CardView>();
+    private static boostedAncestors: WeakMap<Container, number> = new WeakMap<Container, number>();
 
     private static setupAltListeners(): void {
         if (CardView.listenersSetup) {
@@ -286,10 +287,38 @@ export class CardView extends Container {
     private updateDepth(): void {
         if (this.isHovered && CardView.altPressed) {
             this.zIndex = 1000000;
-            if (this.parent) {
-                this.parent.sortableChildren = true;
+            let p: any = this.parent as Container | undefined;
+            let hops = 0;
+            while (p && hops < 5) {
+                try {
+                    p.sortableChildren = true;
+                    if (!CardView.boostedAncestors.has(p)) {
+                        CardView.boostedAncestors.set(p, (p.zIndex ?? 0) as number);
+                    }
+                    p.zIndex = Math.max((p.zIndex ?? 0) as number, 900000);
+                } catch {
+                    // ignore
+                }
+                p = p.parent as any;
+                hops++;
             }
         } else {
+            // restore any boosted ancestors if present
+            let p: any = this.parent as Container | undefined;
+            let hops = 0;
+            while (p && hops < 5) {
+                try {
+                    if (CardView.boostedAncestors.has(p)) {
+                        const prev = CardView.boostedAncestors.get(p)!;
+                        p.zIndex = prev;
+                        CardView.boostedAncestors.delete(p);
+                    }
+                } catch {
+                    // ignore
+                }
+                p = p.parent as any;
+                hops++;
+            }
             this.zIndex = 0;
         }
     }

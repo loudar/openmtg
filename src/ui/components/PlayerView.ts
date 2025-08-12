@@ -68,6 +68,7 @@ export class PlayerView extends Container {
             this.handleCardDragDrop(payload);
         });
 
+
         this.graveyard = new StackView("graveyard", []);
         this.addChild(this.graveyard);
 
@@ -142,6 +143,27 @@ export class PlayerView extends Container {
             this.graveyard.setFaceDown(false);
             this.exile.setFaceDown(false);
         }
+
+        // Ensure consistent z-index layering so cards draw above view texts
+        // Enable sortable children for this player view
+        this.sortableChildren = true;
+        // Default zIndex for texts should be low
+        this.nameLabel.zIndex = 1;
+        // Life counter should not cover enlarged cards
+        this.lifeCounter.zIndex = 2;
+        // Stacks and commander area below hand/battlefield
+        this.library.zIndex = 5;
+        if (this.commanderView) {
+            this.commanderView.zIndex = 6;
+        }
+        this.graveyard.zIndex = 7;
+        this.exile.zIndex = 8;
+        // Hand above stacks
+        if (this.hand) {
+            this.hand.zIndex = 15;
+        }
+        // Battlefield on top among player's zones so its cards hover above labels
+        this.battlefield.zIndex = 20;
 
         // Apply initial layout scaled by current card size
         this.applyScaledLayout();
