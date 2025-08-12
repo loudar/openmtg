@@ -126,7 +126,7 @@ export interface Deck extends CanHaveErrors {
     attractions?: Card[];
     stickers?: Card[];
     hand?: Card[];
-    inPlay?: PlayedCard[];
+    battlefield?: PlayedCard[];
     cardBackImageUrl?: string;
 }
 

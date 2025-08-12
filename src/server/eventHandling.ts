@@ -30,8 +30,8 @@ export function buildZoneOps(player: Player) {
             return deck.stickers as Card[];
         }
         if (zone === "battlefield") {
-            if (!deck.inPlay) { deck.inPlay = []; }
-            return deck.inPlay as PlayedCard[];
+            if (!deck.battlefield) { deck.battlefield = []; }
+            return deck.battlefield as PlayedCard[];
         }
         // command zone not stored in Deck; CommanderView state tracked on client for now
         return null;

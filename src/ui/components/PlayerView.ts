@@ -59,7 +59,7 @@ export class PlayerView extends Container {
         this.commanderView = new CommanderView(info.deck.commanders ?? []);
         this.addChild(this.commanderView);
 
-        this.battlefield = new PlayedCardsView(info.deck.inPlay ?? []);
+        this.battlefield = new PlayedCardsView(info.deck.battlefield ?? []);
         this.addChild(this.battlefield);
         this.battlefield.on("cardDragEnd", (payload: any) => {
             if (!this.isSelf) {
