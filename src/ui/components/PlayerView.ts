@@ -169,6 +169,17 @@ export class PlayerView extends Container {
         this.applyScaledLayout();
         // Subscribe to card size changes to re-apply layout
         this.unsubscribeCardSize = onCardSizeChange(() => this.applyScaledLayout());
+
+        // Life counter changes -> emit for network if self
+        this.lifeCounter.on("change", (value: number, delta: number) => {
+            if (this.isSelf) {
+                try {
+                    this.emit("life:update", { value, delta });
+                } catch {
+                    // ignore emit errors
+                }
+            }
+        });
     }
 
     private addDeck(name: StackType, cards?: Card[]) {
@@ -327,6 +338,14 @@ export class PlayerView extends Container {
     }
 
     public handleEvent(event: GameEvent) {
+        // If this is the local player, emit a networkable game event so others can mirror it
+        if (this.isSelf) {
+            try {
+                this.emit("gameEvent", event);
+            } catch {
+                // ignore emit errors
+            }
+        }
         const compiled = compileEvent(event);
         applyMoves({
             drawTopN: (z, c) => this.drawTopN(z, c),

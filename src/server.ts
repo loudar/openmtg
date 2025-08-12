@@ -33,6 +33,8 @@ async function createPlayer(name: string, deckInput: string): Promise<Player> {
     return {
         id: crypto.randomUUID(),
         name,
+        life: 40,
+        commanderDamage: {},
         deck
     };
 }

@@ -150,8 +150,41 @@ export class GameView {
         }
 
         if (data?.type === "relay") {
-            // Future: handle relayed custom messages
-            // const payload = JSON.parse(data.payload);
+            try {
+                const inner = JSON.parse(data.payload);
+                if (inner?.type === "game:event") {
+                    const pid = inner.payload?.playerId as string | undefined;
+                    const event = inner.payload?.event;
+                    if (pid && event) {
+                        const view = this.playerViews.get(pid);
+                        if (view) {
+                            try {
+                                (view as any).handleEvent(event);
+                            } catch {
+                                // ignore apply errors
+                            }
+                        }
+                    }
+                    return;
+                }
+                if (inner?.type === "life:update") {
+                    const pid = inner.payload?.playerId as string | undefined;
+                    const value = inner.payload?.value as number | undefined;
+                    if (pid && typeof value === "number") {
+                        const view = this.playerViews.get(pid);
+                        if (view && (view as any).lifeCounter) {
+                            try {
+                                (view as any).lifeCounter.value = value;
+                            } catch {
+                                // ignore UI update errors
+                            }
+                        }
+                    }
+                    return;
+                }
+            } catch {
+                // ignore parse errors
+            }
         }
     }
 
@@ -201,6 +234,27 @@ export class GameView {
                     this.contextMenu.close();
                     this.contextMenu.open(items, pos.x, pos.y);
                 });
+
+                // Forward local events to server via WS
+                if (isLocal && this.ws) {
+                    view.on("gameEvent", (event: any) => {
+                        try {
+                            const msg = { type: "game:event", payload: { playerId: p.id, event } };
+                            this.ws!.send(JSON.stringify(msg));
+                        } catch {
+                            // ignore send errors
+                        }
+                    });
+                    view.on("life:update", (payload: any) => {
+                        try {
+                            const msg = { type: "life:update", payload: { playerId: p.id, value: payload?.value, delta: payload?.delta } };
+                            this.ws!.send(JSON.stringify(msg));
+                        } catch {
+                            // ignore send errors
+                        }
+                    });
+                }
+
                 this.playerViews.set(p.id, view);
                 this.stage.addChild(view);
             }
