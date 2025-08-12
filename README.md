@@ -1,9 +1,9 @@
 # OpenMTG
 
-Pixi.js-based prototype UI for a Magic: The Gathering play engine.
+You shouldn't have to pay just to play MTG. Instead, you can just use this engine.
 
 ## Prerequisites
-- Bun 1.2+ (use `bun --version` to confirm)
+- [Bun](https://bun.sh/)
 
 ## Install
 ```bash
