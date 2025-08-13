@@ -1,4 +1,4 @@
-import { Container, Graphics, Text, TextStyle, Ticker } from "pixi.js";
+import {Container, Graphics, Text, TextStyle, Ticker, type TickerCallback} from "pixi.js";
 import {CardView, type CardViewActions} from "./CardView.ts";
 import {CARD_HEIGHT, CARD_WIDTH, FONT_COLOR, FONT_SIZE, getCardSize, onCardSizeChange} from "../globals.ts";
 import {drawDashedRoundedRect} from "../uiHelpers.ts";
@@ -9,14 +9,13 @@ export type StackType = "library" | "graveyard" | "exile" | "attractions" | "sti
 export class StackView extends Container {
     private readonly frame: Graphics;
     private readonly content: Container;
-    private readonly countText: Text;
     private readonly labelText: Text;
     private readonly type: StackType;
-    private cards: Card[] = [];
+    private readonly cards: Card[] = [];
     private faceDown: boolean = false;
     private unsubscribeCardSize?: () => void;
     private isAnimating: boolean = false;
-    private activeShuffleTick?: (delta: number) => void;
+    private activeShuffleTick?: TickerCallback<any>;
 
     constructor(type: StackType, cards?: Card[]) {
         super();
@@ -38,17 +37,8 @@ export class StackView extends Container {
         this.labelText.position.set(4, -16);
         this.addChild(this.labelText);
 
-        this.countText = new Text({
-            text: "0",
-            style: new TextStyle({fontFamily: "Arial", fontSize: FONT_SIZE, fill: FONT_COLOR})
-        });
-        this.countText.anchor.set(0.5);
-        this.countText.position.set(40, 55);
-        this.addChild(this.countText);
-
         this.content = new Container();
         this.addChild(this.content);
-
 
         if (cards) {
             this.cards = [...cards];
@@ -60,31 +50,12 @@ export class StackView extends Container {
         this.unsubscribeCardSize = onCardSizeChange(() => this.redraw());
     }
 
-    setCards(cards: Card[]) {
-        this.cards = [...cards];
-        this.redraw();
-    }
-
-    addCard(card: Card) {
-        this.cards.push(card);
-        this.redraw();
-    }
-
     addCards(cards: Card[]) {
         if (cards.length === 0) {
             return;
         }
         this.cards.push(...cards);
         this.redraw();
-    }
-
-    public drawTop(): Card | undefined {
-        if (this.cards.length === 0) {
-            return undefined;
-        }
-        const c = this.cards.pop();
-        this.redraw();
-        return c;
     }
 
     public drawCount(count: number): Card[] | undefined {
@@ -103,21 +74,23 @@ export class StackView extends Container {
         this.redraw();
     }
 
-    get size() {
-        return this.cards.length;
-    }
-
     private typeLabel() {
+        let text = "";
         switch (this.type) {
             case "library":
-                return "Library";
+                text = "Library";
+                break;
             case "attractions":
-                return "Attractions";
+                text = "Attractions";
+                break;
             case "graveyard":
-                return "Graveyard";
+                text = "Graveyard";
+                break;
             case "exile":
-                return "Exile";
+                text = "Exile";
+                break;
         }
+        return `${text} (${this.cards.length})`;
     }
 
     public shuffle(): void {
@@ -153,23 +126,22 @@ export class StackView extends Container {
             }
         };
 
+        this.labelText.text = this.typeLabel();
+
         // Face-down rendering using CardUI when requested
         if (this.faceDown) {
             const cardBack = new CardView(undefined, w, h, true, stackOptions);
             this.content.addChild(cardBack);
-            this.countText.text = `${this.cards.length}`;
             return;
         }
 
         if (this.cards.length === 0) {
             drawDashedRoundedRect(this.content, 0, 0, w, h, 6, 0x777777, 2, 6, 6);
-            this.countText.text = "0";
         } else {
             // Show the top card using CardUI
             const top = this.cards[this.cards.length - 1];
             const cardTop = new CardView(top, w, h, false, stackOptions);
             this.content.addChild(cardTop);
-            this.countText.text = `${this.cards.length}`;
         }
     }
 
@@ -192,7 +164,7 @@ export class StackView extends Container {
         const waves = 3.5; // number of wiggles
 
         const start = (typeof performance !== "undefined" ? performance.now() : Date.now());
-        const tick = (_delta: number) => {
+        const tick = (_delta: Ticker) => {
             const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
             const t = Math.min(1, (now - start) / duration);
             const ease = 1 - Math.pow(1 - t, 3); // easeOutCubic
