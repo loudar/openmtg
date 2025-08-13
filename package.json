@@ -23,7 +23,7 @@
     "eslint": "^9.33.0"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "@typescript/native-preview": "^7.0.0-dev.20250813.1"
   },
   "dependencies": {
     "@types/express": "^5.0.3",

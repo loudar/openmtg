@@ -1,4 +1,6 @@
 import type {ScryfallCard} from "./Scryfall.ts";
+import type {ZoneName} from "../game/events.ts";
+import {CounterType} from "./CounterType.ts";
 
 export enum CardTypes {
     Artifact = "Artifact",
@@ -112,8 +114,6 @@ export interface CanHaveErrors {
     errors?: string[];
 }
 
-import type { ZoneName } from "../game/events.ts";
-
 export interface PlayedCard {
     card: Card;
     playedFrom: ZoneName;
@@ -149,4 +149,22 @@ export interface Card extends ScryfallCard {
     inPlay?: boolean;
     playedTimes?: number;
     isCommander: boolean;
+    counters?: Counter[];
+    buff?: Buff;
+}
+
+/**
+ * Used for any +X/+X counters
+ */
+export interface Buff {
+    power: number;
+    toughness: number;
+}
+
+/**
+ * Used for anything that isn't +X/+X counters
+ */
+export interface Counter {
+    type: CounterType;
+    count: number;
 }
