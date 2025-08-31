@@ -134,6 +134,12 @@ export class StackView extends Container {
 
         const w = CARD_WIDTH * getCardSize();
         const h = CARD_HEIGHT * getCardSize();
+        const gap = 8 * getCardSize();
+        const minWidth = (3 * w) + (2 * gap);
+        // Invisible backdrop to ensure a minimum hit area for drag/drop
+        this.frame.beginFill(0x000000, 0.0001);
+        this.frame.drawRoundedRect(0, 0, minWidth, h, 6);
+        this.frame.endFill();
 
         const stackOptions: CardViewActions = {
             leftClick: () => {

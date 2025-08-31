@@ -1,9 +1,10 @@
-import { Container, Text, TextStyle } from "pixi.js";
+import { Container, Text, TextStyle, Graphics } from "pixi.js";
 import { CardView } from "./CardView.ts";
 import { getCardSize, onCardSizeChange, FONT_COLOR, FONT_SIZE } from "../globals.ts";
 import type { Card, PlayedCard } from "../../models/MTG.ts";
 
 export class PlayedCardsView extends Container {
+    private backdrop: Graphics;
     private played: PlayedCard[] = [];
     private landsContainer: Container;
     private othersContainer: Container;
@@ -15,6 +16,9 @@ export class PlayedCardsView extends Container {
         super();
         this.eventMode = "static";
         this.cursor = "default";
+
+        this.backdrop = new Graphics();
+        this.addChild(this.backdrop);
 
         this.landsContainer = new Container();
         this.othersContainer = new Container();
@@ -145,6 +149,16 @@ export class PlayedCardsView extends Container {
     }
 
     private redraw() {
+        // Ensure a minimum hit area regardless of content
+        const w = this.cardWidth();
+        const h = this.cardHeight();
+        const gap = 8 * getCardSize();
+        const minWidth = (3 * w) + (2 * gap);
+        const minHeight = (h * 2) + 26; // two rows plus label spacing
+        this.backdrop.clear();
+        this.backdrop.beginFill(0x000000, 0.0001);
+        this.backdrop.drawRect(0, -18, minWidth, minHeight + 18);
+        this.backdrop.endFill();
         this.clearChildren(this.landsContainer);
         this.clearChildren(this.othersContainer);
 

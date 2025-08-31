@@ -371,6 +371,19 @@ export class PlayerView extends Container {
     }
 
     private dropTargetAt(x: number, y: number): ZoneName | null {
+        // Prefer primary zones first
+        if (this.battlefield) {
+            const bf = this.battlefield.getBounds();
+            if (x >= bf.x && x <= bf.x + bf.width && y >= bf.y && y <= bf.y + bf.height) {
+                return "battlefield";
+            }
+        }
+        if (this.hand) {
+            const hv = this.hand.getBounds();
+            if (x >= hv.x && x <= hv.x + hv.width && y >= hv.y && y <= hv.y + hv.height) {
+                return "hand";
+            }
+        }
         const gy = this.graveyard.getBounds();
         if (x >= gy.x && x <= gy.x + gy.width && y >= gy.y && y <= gy.y + gy.height) {
             return "graveyard";

@@ -1,9 +1,10 @@
-import {Container} from "pixi.js";
+import {Container, Graphics} from "pixi.js";
 import {CardView} from "./CardView.ts";
 import {getCardSize, onCardSizeChange} from "../globals.ts";
 import type {Card} from "../../models/MTG.ts";
 
 export class HandView extends Container {
+    private backdrop: Graphics = new Graphics();
     private cards: Card[] = [];
     private faceDown: boolean = false;
     private defaultGap: number = 8;
@@ -26,6 +27,8 @@ export class HandView extends Container {
         super();
         this.eventMode = "static";
         this.cursor = "default";
+        // backdrop defines hit area and min width for empty/small hands
+        this.addChild(this.backdrop);
         if (cards) {
             this.cards = [...cards];
         }
@@ -79,6 +82,7 @@ export class HandView extends Container {
         this.maxWidth = w;
         this.layoutPositions();
         this.applyBasePositions();
+        this.updateBackdrop();
     }
 
     private clearCards() {
@@ -146,6 +150,7 @@ export class HandView extends Container {
         this.sortableChildren = true;
         this.layoutPositions();
         this.applyBasePositions();
+        this.updateBackdrop();
     }
 
     private layoutPositions() {
@@ -187,6 +192,29 @@ export class HandView extends Container {
             node.x = this.basePositions[i] ?? 0;
             node.y = 0;
         }
+    }
+
+    private updateBackdrop() {
+        const w = this.cardWidth;
+        const h = this.cardHeight;
+        const minWidth = (3 * w) + (2 * this.defaultGap);
+        let currentWidth = 0;
+        const n = this.cardNodes.length;
+        if (n > 0) {
+            if (n === 1) {
+                currentWidth = w;
+            } else {
+                const lastX = this.basePositions[n - 1] ?? 0;
+                currentWidth = lastX + w;
+            }
+        }
+        const width = Math.max(minWidth, Math.min(this.maxWidth, currentWidth));
+        this.backdrop.clear();
+        this.backdrop.beginFill(0x000000, 0.0001);
+        this.backdrop.drawRect(0, 0, width, h);
+        this.backdrop.endFill();
+        this.backdrop.eventMode = "static";
+        this.backdrop.cursor = "default";
     }
 
     private onHoverIndex(i: number) {
