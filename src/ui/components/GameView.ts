@@ -53,7 +53,7 @@ export class GameView {
             width,
             height,
             backgroundColor: options?.background ?? 0x0a0a0a,
-            antialias: true
+            antialias: false
         }).then(async () => {
             if (typeof document !== "undefined" && (document as any).body) {
                 document.body.appendChild(this.app.canvas);
@@ -217,8 +217,9 @@ export class GameView {
                         label,
                         onClick: () => {
                             // Handle context actions
+                            const source = payload?.options?.source as string | undefined;
+                            const card = payload?.card as any;
                             if (label === "Shuffle") {
-                                const source = payload?.options?.source;
                                 if (source === "library") {
                                     try {
                                         view.library.shuffle();
@@ -226,8 +227,45 @@ export class GameView {
                                         // ignore errors from shuffle
                                     }
                                 }
+                                return;
                             }
-                            // Other actions like "Search" can be handled elsewhere
+                            // Battlefield card moves
+                            if (source === "battlefield" && card && card.id) {
+                                let target: any = null;
+                                if (label === "Move to Graveyard") {
+                                    target = "graveyard";
+                                } else if (label === "Move to Exile") {
+                                    target = "exile";
+                                } else if (label === "Return to Hand") {
+                                    target = "hand";
+                                }
+                                if (target) {
+                                    try {
+                                        (view as any).handleEvent({ type: "MOVE_CARDS", source: "battlefield", target, cardIds: [card.id] });
+                                    } catch {
+                                        // ignore apply errors
+                                    }
+                                }
+                                return;
+                            }
+                            // Graveyard/Exile moves back to hand or battlefield
+                            if ((source === "graveyard" || source === "exile") && card && card.id) {
+                                let target: any = null;
+                                if (label === "Return to Hand") {
+                                    target = "hand";
+                                } else if (label === "Return to Battlefield") {
+                                    target = "battlefield";
+                                }
+                                if (target) {
+                                    try {
+                                        (view as any).handleEvent({ type: "MOVE_CARDS", source: source, target, cardIds: [card.id] });
+                                    } catch {
+                                        // ignore apply errors
+                                    }
+                                }
+                                return;
+                            }
+                            // Other actions like "Search" or "Details" can be handled elsewhere
                         }
                     }));
                     const pos = payload?.position ?? {x: (this.app.renderer.width as number) / 2, y: (this.app.renderer.height as number) / 2};

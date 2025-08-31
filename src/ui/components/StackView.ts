@@ -69,6 +69,28 @@ export class StackView extends Container {
         return c;
     }
 
+    public removeByIds(ids: string[]): Card[] {
+        if (!ids || ids.length === 0) {
+            return [];
+        }
+        const set = new Set(ids);
+        const kept: Card[] = [];
+        const removed: Card[] = [];
+        for (const c of this.cards) {
+            if (set.has(c.id)) {
+                removed.push(c);
+            } else {
+                kept.push(c);
+            }
+        }
+        if (removed.length > 0) {
+            (this.cards as any).length = 0;
+            this.cards.push(...kept);
+            this.redraw();
+        }
+        return removed;
+    }
+
     setFaceDown(v: boolean) {
         this.faceDown = v;
         this.redraw();
@@ -118,11 +140,20 @@ export class StackView extends Container {
                 this.emit("cardLeftClick", {zone: this.type});
             },
             rightClick: (_c, e) => {
-                const actions = this.type === "library" ? ["Search", "Shuffle"] : ["Search"];
+                let actions: string[] = [];
+                if (this.type === "library") {
+                    actions = ["Search", "Shuffle"];
+                } else if (this.type === "graveyard" || this.type === "exile") {
+                    actions = ["Return to Hand", "Return to Battlefield", "Details"];
+                } else {
+                    actions = ["Search"];
+                }
                 const options = {source: this.type, actions};
                 const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
                 const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
-                this.emit("cardRightClick", {zone: this.type, options, position: {x: gx, y: gy}});
+                // include the top card as context when face-up
+                const card = this.faceDown ? undefined : (this.cards.length > 0 ? this.cards[this.cards.length - 1] : undefined);
+                this.emit("cardRightClick", {zone: this.type, card, options, position: {x: gx, y: gy}});
             }
         };
 

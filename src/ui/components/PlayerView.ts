@@ -67,6 +67,12 @@ export class PlayerView extends Container {
             }
             this.handleCardDragDrop(payload);
         });
+        this.battlefield.on("openMenu", (payload: any) => {
+            if (!this.isSelf) {
+                return;
+            }
+            this.emit("openMenu", payload);
+        });
 
 
         this.graveyard = new StackView("graveyard", (this.info.deck as any).graveyard ?? []);
@@ -306,8 +312,7 @@ export class PlayerView extends Container {
             return v.removeByIds(ids);
         }
         if (v instanceof StackView) {
-            // Not implemented for stacks yet: fallback to draw top if ids length provided
-            return [];
+            return (v as StackView).removeByIds(ids);
         }
         return [];
     }

@@ -120,7 +120,7 @@ export class PlayedCardsView extends Container {
                 rightClick: (_c, e) => {
                     const gx = (e && (e.global?.x ?? e.globalX ?? e.clientX)) ?? 0;
                     const gy = (e && (e.global?.y ?? e.globalY ?? e.clientY)) ?? 0;
-                    this.emit("openMenu", { card, options: { source: "battlefield", actions: ["Details"] }, position: { x: gx, y: gy } });
+                    this.emit("openMenu", { card, options: { source: "battlefield", actions: ["Move to Graveyard", "Move to Exile", "Return to Hand", "Details"] }, position: { x: gx, y: gy } });
                 },
                 draggable: true,
                 onDragEnd: (_c, global) => {
