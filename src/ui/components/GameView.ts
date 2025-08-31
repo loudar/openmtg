@@ -229,6 +229,25 @@ export class GameView {
                                 }
                                 return;
                             }
+                            // Hand actions
+                            if (source === "hand" && card && card.id) {
+                                if (label === "Play") {
+                                    try {
+                                        (view as any).handleEvent({ type: "MOVE_CARDS", source: "hand", target: "battlefield", cardIds: [card.id] });
+                                    } catch {
+                                        // ignore apply errors
+                                    }
+                                    return;
+                                }
+                                if (label === "Move to Graveyard") {
+                                    try {
+                                        (view as any).handleEvent({ type: "MOVE_CARDS", source: "hand", target: "graveyard", cardIds: [card.id] });
+                                    } catch {
+                                        // ignore apply errors
+                                    }
+                                    return;
+                                }
+                            }
                             // Battlefield card moves
                             if (source === "battlefield" && card && card.id) {
                                 let target: any = null;
