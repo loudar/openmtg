@@ -1,6 +1,8 @@
 import type {Card, Deck} from "../models/MTG.ts";
 import type {CounterType} from "../models/CounterType.ts";
 import {fisherYatesShuffle} from "./shuffling.ts";
+import {filterCards, isLand, producedMana, producesMana} from "./filtering.ts";
+import {cardAbilites} from "./cardFeatures.ts";
 
 export type ZoneType =
     | "library"
@@ -258,44 +260,12 @@ export class Boardstate {
         const out: Card[] = [];
         this.getPlayerById(playerId).zones.forEach(zone => {
             if (zone.type === zoneType) {
-                const outCards = zone.cards.filter(c => cardIds.includes(c.id));
+                const outCards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
                 out.push(...outCards);
-                zone.cards = zone.cards.filter(c => cardIds.includes(c.id));
+                zone.cards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
             }
         });
         return out;
-    }
-
-    public static filterCards(cards: Card[], filters: CardFilter[]) {
-        return cards.filter(c => {
-            for (const filter of filters) {
-                if (filter.value !== undefined && filter.value !== null) {
-                    if (c[filter.property] === filter.value) {
-                        return true;
-                    } else if (filter.required) {
-                        return false;
-                    }
-                }
-
-                if (filter.regex !== undefined && filter.regex !== null) {
-                    const matches = c[filter.property]?.toString().match(filter.regex);
-                    if ((matches?.length ?? 0) > 0) {
-                        return true;
-                    } else if (filter.required) {
-                        return false;
-                    }
-                }
-
-                if (filter.filterFunction) {
-                    const result = filter.filterFunction(c[filter.property]);
-                    if (result) {
-                        return true;
-                    } else if (filter.required) {
-                        return false;
-                    }
-                }
-            }
-        });
     }
 
     public alivePlayerCount() {
@@ -349,5 +319,55 @@ export class Boardstate {
                 player.hasLost = true;
             }
         }
+    }
+
+    public playerUntapCards() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        const battlefield = this.getPlayerZone(turn.playerId, "battlefield");
+        battlefield.cards.forEach(c => {
+            c.tapped = false;
+        });
+    }
+
+    public tapCard(playerId: PlayerId, cardId: CardId) {
+        const card = this.getPlayerZone(playerId, "battlefield").cards.find(card => card.uniqueId === cardId);
+        if (!card) {
+            throw new Error(`Card with unique ID ${cardId} not found fo rplayer ${playerId}`);
+        }
+
+        card.tapped = true;
+    }
+
+    public playerUntappedMana() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        return this.playerHasUntappedMana(turn.playerId);
+    }
+
+    public playerHasUntappedMana(playerId: string) {
+        const battlefield = this.getPlayerZone(playerId, "battlefield");
+        const cardsThatCanProduceMana = battlefield.cards.filter(c => producesMana(c.oracle_text) || isLand(c));
+        const cardsWithFreeAbility = cardsThatCanProduceMana.filter(c => {
+            const tapForManaAbs = cardAbilites(c).filter(a => (!a.cost || a.cost === "{T}") && producesMana(a.text));
+            if (tapForManaAbs.length === 0 && isLand(c)) {
+                return !c.tapped;
+            }
+
+            return tapForManaAbs.length > 0 && !c.tapped;
+        });
+
+        return cardsWithFreeAbility.map(c => {
+            const abs = cardAbilites(c).filter(a => (!a.cost || a.cost === "{T}") && producesMana(a.text))
+                .map(a => producedMana(a.text));
+
+            return abs.reduce((prev, cur) => prev + (cur.at(0)?.at(0)?.length ?? 0), 0);
+        });
     }
 }

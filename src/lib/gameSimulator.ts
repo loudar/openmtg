@@ -19,11 +19,11 @@ export class GameSimulator {
         let currentPhase = turn.phases.at(0);
         while (currentPhase) {
             bs.info.currentTurn.currentPhase = currentPhase;
-            console.log(`[TURN] ${bs.info.currentTurn.round}\t[PHASE] ${currentPhase}`);
+            console.log(`TURN\t${bs.info.currentTurn.round}\tPHASE ${currentPhase}`);
 
             GameSimulator.autoRunPhase(bs);
 
-            console.log(`[ALIVE] ${bs.alivePlayerCount()}`);
+            console.log(`ALIVE ${bs.alivePlayerCount()}`);
             if (bs.alivePlayerCount() <= 1) {
                 return;
             }
@@ -39,6 +39,7 @@ export class GameSimulator {
 
         switch (bs.info.currentTurn.currentPhase) {
             case Phase.Untap:
+                bs.playerUntapCards();
                 break;
             case Phase.Upkeep:
                 break;
@@ -46,6 +47,9 @@ export class GameSimulator {
                 bs.playerDrawCard();
                 break;
             case Phase.Main:
+                /*while (bs.playerUntappedMana() > bs.playerLowestManaCost()) {
+                    bs.playCard(bs.playerCardWithLowestManaCost());
+                }*/
                 break;
             case Phase.CombatStart:
                 break;

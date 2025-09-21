@@ -3,6 +3,7 @@ import {cardLine} from "./Converters.ts";
 import {ScryfallApi} from "./ScryfallApi.ts";
 import axios from "axios";
 import type {ArchidektDeck} from "./ArchidektDeck.ts";
+import {v4} from "uuid";
 
 export class DeckDownloader {
     static async getFromDeckUrl(deckUrl: string): Promise<Deck> {
@@ -32,18 +33,19 @@ export class DeckDownloader {
                 const count = line.count ?? 1;
                 for (let i = 0; i < count; i++) {
                     card.isCommander = false;
+                    card.uniqueId = v4();
                     if (line.categories?.some(c => c.startsWith("Commander"))) {
                         card.isCommander = true;
                         deck.commanders ??= [];
-                        deck.commanders.push(card);
+                        deck.commanders.push(structuredClone(card));
                     } else if (line.categories?.some(c => c.startsWith("Attraction"))) {
                         deck.attractions ??= [];
-                        deck.attractions.push(card);
+                        deck.attractions.push(structuredClone(card));
                     } else if (line.categories?.some(c => c.startsWith("Stickers"))) {
                         deck.stickers ??= [];
-                        deck.stickers.push(card);
+                        deck.stickers.push(structuredClone(card));
                     } else {
-                        deck.library.push(card);
+                        deck.library.push(structuredClone(card));
                     }
                 }
             } else {

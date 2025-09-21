@@ -1,6 +1,7 @@
 import type {ScryfallCard} from "./Scryfall.ts";
 import type {ZoneName} from "../game/events.ts";
 import {CounterType} from "./CounterType.ts";
+import type {CardId} from "../lib/boardstate.ts";
 
 export enum CardTypes {
     Artifact = "Artifact",
@@ -53,6 +54,7 @@ export enum MtgShortColor {
     Blue = "U",
     Black = "B",
     Green = "G",
+    Colorless = "C",
 }
 
 export enum Formats {
@@ -146,11 +148,13 @@ export interface DeckImport {
 }
 
 export interface Card extends ScryfallCard {
+    uniqueId: CardId;
     inPlay?: boolean;
     playedTimes?: number;
     isCommander: boolean;
     counters?: Counter[];
     buff?: Buff;
+    tapped?: boolean;
 }
 
 /**
