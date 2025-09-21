@@ -31,7 +31,7 @@ export interface Player {
     name: string;
     life: number;
     commanderDamage: Record<PlayerId, number>;
-    counters: Record<CounterType, number>;
+    counters: Record<string, number>;
     zones: BoardZone[];
     hasWon: boolean;
     hasLost: boolean;

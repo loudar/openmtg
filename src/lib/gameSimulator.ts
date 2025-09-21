@@ -1,17 +1,13 @@
-import {Boardstate, type BoardstateInfo} from "./boardstate.ts";
+import {Boardstate} from "./boardstate.ts";
 
 export class GameSimulator {
-    public static simulateGame(boardState: BoardstateInfo) {
-        const bs = new Boardstate(boardState);
-
+    public static simulateGame(bs: Boardstate) {
         bs.startGame();
 
         while (bs.alivePlayerCount() > 1) {
             bs.nextTurn(bs.info.currentTurn);
             GameSimulator.autoRunTurnPhases(bs);
         }
-
-        return boardState;
     }
 
     public static autoRunTurnPhases(bs: Boardstate) {
