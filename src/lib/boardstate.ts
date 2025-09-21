@@ -1,5 +1,6 @@
 import type {Card, Deck} from "../models/MTG.ts";
 import type {CounterType} from "../models/CounterType.ts";
+import {fisherYatesShuffle} from "./shuffling.ts";
 
 export type ZoneType =
     | "library"
@@ -115,17 +116,13 @@ export class Boardstate {
         this.info.players.push(player);
     }
 
-    public static shuffleCards(cards: Card[]): Card[] {
-
-    }
-
     public setPlayerDeck(playerId: PlayerId, deck: Deck) {
         this.getPlayerById(playerId).zones = DefaultZones;
 
-        this.getPlayerZone(playerId, "library").cards = deck.library;
+        this.getPlayerZone(playerId, "library").cards = fisherYatesShuffle(deck.library);
         this.getPlayerZone(playerId, "commander").cards = deck.commanders ?? [];
-        this.getPlayerZone(playerId, "attractions").cards = deck.attractions ?? [];
-        this.getPlayerZone(playerId, "stickers").cards = deck.stickers ?? [];
+        this.getPlayerZone(playerId, "attractions").cards = fisherYatesShuffle(deck.attractions ?? []);
+        this.getPlayerZone(playerId, "stickers").cards = fisherYatesShuffle(deck.stickers ?? []);
 
         this.getPlayerZone(playerId, "exile").cards = [];
         this.getPlayerZone(playerId, "graveyard").cards = [];
