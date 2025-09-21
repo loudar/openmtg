@@ -1,4 +1,4 @@
-import type {Card} from "../models/MTG.ts";
+import type {Card, Deck} from "../models/MTG.ts";
 import type {CounterType} from "../models/CounterType.ts";
 
 export type ZoneType =
@@ -73,6 +73,7 @@ export interface Turn {
     extraCombatPhaseCount: number;
     phases: Phase[];
     currentPhase?: Phase;
+    spellStack: Card[];
     playedSpells: Card[];
 }
 
@@ -114,6 +115,24 @@ export class Boardstate {
         this.info.players.push(player);
     }
 
+    public static shuffleCards(cards: Card[]): Card[] {
+
+    }
+
+    public setPlayerDeck(playerId: PlayerId, deck: Deck) {
+        this.getPlayerById(playerId).zones = DefaultZones;
+
+        this.getPlayerZone(playerId, "library").cards = deck.library;
+        this.getPlayerZone(playerId, "commander").cards = deck.commanders ?? [];
+        this.getPlayerZone(playerId, "attractions").cards = deck.attractions ?? [];
+        this.getPlayerZone(playerId, "stickers").cards = deck.stickers ?? [];
+
+        this.getPlayerZone(playerId, "exile").cards = [];
+        this.getPlayerZone(playerId, "graveyard").cards = [];
+        this.getPlayerZone(playerId, "hand").cards = [];
+        this.getPlayerZone(playerId, "battlefield").cards = [];
+    }
+
     public getPlayerById(id: PlayerId): Player {
         const currentPlayer = this.info.players.find(p => p.id === id);
         if (!currentPlayer) {
@@ -147,7 +166,8 @@ export class Boardstate {
             round: 0,
             playerId: firstPlayer.id,
             extraCombatPhaseCount: 0,
-            playedSpells: []
+            playedSpells: [],
+            spellStack: [],
         };
         this.info.firstPlayerId = firstPlayer.id;
     }
@@ -199,6 +219,7 @@ export class Boardstate {
             phases: DefaultPhases,
             playedSpells: [],
             currentPhase: undefined,
+            spellStack: []
         } satisfies Turn;
     }
 
@@ -234,16 +255,6 @@ export class Boardstate {
                 zone.cards.push(...cards);
             }
         });
-    }
-
-    public getCardsFromZone(playerId: PlayerId, zoneType: ZoneType, cards: Card[]) {
-        const out: Card[] = [];
-        this.getPlayerById(playerId).zones.forEach(zone => {
-            if (zone.type === zoneType) {
-                out.push(...cards);
-            }
-        });
-        return out;
     }
 
     public removeCardsFromZone(playerId: PlayerId, zoneType: ZoneType, cardIds: CardId[]) {
@@ -294,5 +305,52 @@ export class Boardstate {
         return this.info.players.filter(p => {
             return !p.hasWon && !p.hasLost;
         }).length;
+    }
+
+    public getTopCardFromZone(playerId: PlayerId, zoneType: ZoneType) {
+        return this.getPlayerZone(playerId, zoneType).cards.pop();
+    }
+
+    public playerDrawCard() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        const topCard = this.getTopCardFromZone(turn.playerId, "library");
+        if (topCard) {
+            console.log(`drawing card to hand: ${topCard.name}`);
+            this.addCardsToZone(turn.playerId, "hand", [topCard]);
+        }
+    }
+
+    public playerHasLost(playerId: PlayerId) {
+        const player = this.getPlayerById(playerId);
+        if (player.life <= 0
+            || this.getPlayerZone(player.id, "library").cards.length === 0
+        ) {
+            // TODO: implement lose cases or preventions
+            return true;
+        }
+
+        return false;
+    }
+
+    public playerHasWon(playerId: PlayerId) {
+        // TODO: implement win cons
+        return false;
+    }
+
+    public checkForWins() {
+        for (const player of this.info.players) {
+            if (this.playerHasWon(player.id)) {
+                player.hasWon = true;
+                continue;
+            }
+
+            if (this.playerHasLost(player.id)) {
+                player.hasLost = true;
+            }
+        }
     }
 }
