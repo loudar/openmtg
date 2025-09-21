@@ -33,6 +33,8 @@ export interface Player {
     commanderDamage: Record<PlayerId, number>;
     counters: Record<CounterType, number>;
     zones: BoardZone[];
+    hasWon: boolean;
+    hasLost: boolean;
 }
 
 export enum Phase {
@@ -70,10 +72,13 @@ export interface Turn {
     playerId: PlayerId;
     extraCombatPhaseCount: number;
     phases: Phase[];
+    currentPhase?: Phase;
+    playedSpells: Card[];
 }
 
 export interface BoardstateInfo {
     players: Player[];
+    firstPlayerId?: PlayerId;
     currentTurn?: Turn;
 }
 
@@ -127,7 +132,50 @@ export class Boardstate {
         return zone;
     }
 
-    public nextPlayer(currentPlayerId: PlayerId) {
+    public gameNotStarted() {
+        return this.info.currentTurn === undefined && this.info.firstPlayerId === undefined;
+    }
+
+    public startGame(force: boolean = false) {
+        if (!this.gameNotStarted() && !force) {
+            return;
+        }
+
+        const firstPlayer = this.randomPlayer().player;
+        this.info.currentTurn = {
+            phases: DefaultPhases,
+            round: 0,
+            playerId: firstPlayer.id,
+            extraCombatPhaseCount: 0,
+            playedSpells: []
+        };
+        this.info.firstPlayerId = firstPlayer.id;
+    }
+
+    public randomPlayer() {
+        if (this.info.players.length === 0) {
+            throw new Error(`No players in boardstate`);
+        }
+
+        const random = Math.floor(Math.random() * this.info.players.length);
+        return {
+            index: random,
+            player: this.info.players[random]!
+        };
+    }
+
+    public nextPlayer(currentPlayerId?: PlayerId) {
+        if (this.info.players.length === 0) {
+            throw new Error(`No players in boardstate`);
+        }
+
+        if (!currentPlayerId) {
+            return {
+                index: 0,
+                player: this.info.players.at(0)!
+            };
+        }
+
         const currentIndex = this.info.players.indexOf(this.getPlayerById(currentPlayerId));
         const newIndex = (currentIndex === this.info.players.length - 1) ? 0 : (currentIndex + 1);
         return {
@@ -136,16 +184,48 @@ export class Boardstate {
         };
     }
 
-    public advanceTurn(turn: Turn) {
+    public nextTurn(turn?: Turn) {
+        if (!turn) {
+            throw new Error(`Turn is empty. Make sure to start the game first`);
+        }
+
         const nextPlayer = this.nextPlayer(turn.playerId);
 
-        return <Turn>{
+        return {
             ...turn,
-            round: nextPlayer.index === 0 ? turn.round + 1 : turn.round,
+            round: nextPlayer.player.id === this.info.firstPlayerId ? turn.round + 1 : turn.round,
             playerId: nextPlayer.player.id,
             extraCombatPhaseCount: 0,
-            phases: DefaultPhases
+            phases: DefaultPhases,
+            playedSpells: [],
+            currentPhase: undefined,
+        } satisfies Turn;
+    }
+
+    public nextPhase() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
         }
+
+        const currentPhaseIndex = this.currentPhaseIndex();
+        if (currentPhaseIndex === this.info.currentTurn.phases.length - 1) {
+            return undefined;
+        }
+
+        return this.info.currentTurn.phases[currentPhaseIndex + 1];
+    }
+
+    public currentPhaseIndex() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const currentPhase = this.info.currentTurn.currentPhase;
+        if (!currentPhase) {
+            throw new Error(`Current phase is not set. Make sure to start the game first`);
+        }
+
+        return this.info.currentTurn.phases.indexOf(currentPhase);
     }
 
     public addCardsToZone(playerId: PlayerId, zoneType: ZoneType, cards: Card[]) {
@@ -208,5 +288,11 @@ export class Boardstate {
                 }
             }
         });
+    }
+
+    public alivePlayerCount() {
+        return this.info.players.filter(p => {
+            return !p.hasWon && !p.hasLost;
+        }).length;
     }
 }
