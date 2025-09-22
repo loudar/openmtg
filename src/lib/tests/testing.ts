@@ -2,6 +2,7 @@ import {Boardstate, DefaultZones} from "../boardstate.ts";
 import {v4} from "uuid";
 import {GameSimulator} from "../gameSimulator.ts";
 import {DeckDownloader} from "../../tools/DeckDownloader.ts";
+import {cardAbilites} from "../cardFeatures.ts";
 
 const player1 = {
     id: v4(),
@@ -36,4 +37,16 @@ bs.setPlayerDeck(player1.id, deck1);
 bs.addPlayer(player2);
 bs.setPlayerDeck(player2.id, deck2);
 
-GameSimulator.simulateGame(bs);
+deck1.library.map(c => {
+    const abs = cardAbilites(c);
+    for (const ab of abs) {
+        if (!ab.cost) {
+            continue;
+        }
+
+        console.log(true, ab.cost);
+        bs.payCost(ab.cost, c);
+    }
+})
+
+//GameSimulator.simulateGame(bs);

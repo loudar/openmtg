@@ -456,8 +456,14 @@ export class Boardstate {
     public runEffect(playerId: PlayerId, c: Card, ability: Ability, trigger: string) {
         const effects = ability.text.slice(trigger.length).split(".");
         for (const effect of effects) {
+            const trimmed = effect.trim();
+            if (trimmed.length === 0) {
+                continue;
+            }
+
             const conditions = ["if", "when", "unless", "you may"];
             const justHappens = !conditions.some(c => effect.includes(c));
+            console.log(justHappens, effect);
             if (justHappens) {
                 this.addEffectToStack(playerId, c, effect);
                 continue;
@@ -594,9 +600,16 @@ export class Boardstate {
         });
     }
 
-    private payCost(cost: string, card: Card) {
+    public payCost(cost: string, card: Card) {
         if (cost.includes("{T}")) {
             card.tapped = true;
+        }
+
+        const manaCost = cost.match(/\{\d+}/gmi);
+        if (manaCost) {
+            manaCost.forEach(c => {
+                this.removeFloatingMana(c);
+            });
         }
     }
 
@@ -611,5 +624,14 @@ export class Boardstate {
 
     private triggerSecondaryEffects(playerId: PlayerId, stackItem: StackItem) {
         // TODO: implement stuff like "whenever x, do y"
+    }
+
+    private removeFloatingMana(cost: string) {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        // TODO: figure out how the fuck to remove mana from pool
     }
 }
