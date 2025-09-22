@@ -1,8 +1,7 @@
 import {type Card, type Deck, MtgShortColor} from "../models/MTG.ts";
-import type {CounterType} from "../models/CounterType.ts";
 import {fisherYatesShuffle} from "./shuffling.ts";
-import {filterCards, isLand, producedManaOptions, producesMana} from "./filtering.ts";
-import {type Ability, cardAbilites} from "./cardFeatures.ts";
+import {isLand, producedManaOptions, producesMana} from "./filtering.ts";
+import {type Ability, cardAbilites, manaCardsThatWouldPayCost, toColorArray} from "./cardFeatures.ts";
 
 export type ZoneType =
     | "library"
@@ -71,6 +70,7 @@ export const DefaultPhases: Phase[] = [
 ]
 
 export interface Turn {
+    floatingMana: MtgShortColor[];
     landPlayed: boolean;
     round: number;
     playerId: PlayerId;
@@ -83,7 +83,7 @@ export interface Turn {
 
 export interface StackItem {
     playedBy: PlayerId,
-    effect?: string,
+    effect: string,
     card: Card,
 }
 
@@ -112,7 +112,7 @@ export interface CardFilter {
     required?: boolean;
 }
 
-interface ManaOption {
+export interface ManaOption {
     cost: string;
     text: string;
     options: MtgShortColor[][];
@@ -180,7 +180,8 @@ export class Boardstate {
             extraCombatPhaseCount: 0,
             playedSpells: [],
             stack: [],
-            landPlayed: false
+            landPlayed: false,
+            floatingMana: []
         };
         this.info.firstPlayerId = firstPlayer.id;
     }
@@ -233,7 +234,8 @@ export class Boardstate {
             playedSpells: [],
             currentPhase: undefined,
             stack: [],
-            landPlayed: false
+            landPlayed: false,
+            floatingMana: [],
         } satisfies Turn;
     }
 
@@ -273,14 +275,20 @@ export class Boardstate {
 
     public removeCardsFromZone(playerId: PlayerId, zoneType: ZoneType, cardIds: CardId[]) {
         const out: Card[] = [];
-        this.getPlayerById(playerId).zones.forEach(zone => {
-            if (zone.type === zoneType) {
-                const outCards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
-                out.push(...outCards);
-                zone.cards = zone.cards.filter(c => !cardIds.includes(c.uniqueId));
-            }
-        });
+        const zone = this.getPlayerZone(playerId, zoneType);
+        const outCards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
+        out.push(...outCards);
+        zone.cards = zone.cards.filter(c => !cardIds.includes(c.uniqueId));
         return out;
+    }
+
+    public getCardFromZone(playerId: PlayerId, zoneType: ZoneType, cardId: CardId) {
+        const zone = this.getPlayerZone(playerId, zoneType);
+        const card = zone.cards.find(c => cardId === c.uniqueId);
+        if (!card) {
+            throw new Error(`Card with ID ${cardId} not found in ${zoneType}`);
+        }
+        return card;
     }
 
     public alivePlayerCount() {
@@ -444,11 +452,13 @@ export class Boardstate {
     }
 
     public runEffect(playerId: PlayerId, c: Card, ability: Ability, trigger: string) {
-        const effect = ability.text.slice(trigger.length);
-        const justHappens = !effect.includes("if") && !effect.includes("unless") && !effect.includes("you may");
-        console.log(effect);
-        if (justHappens || this.conditionMet(c, effect)) {
-            this.addEffectToStack(playerId, c, effect);
+        const effects = ability.text.slice(trigger.length).split(".");
+        for (const effect of effects) {
+            const justHappens = !effect.includes("if") && !effect.includes("unless") && !effect.includes("you may");
+            console.log(effect);
+            if (justHappens || this.conditionMet(c, effect)) {
+                this.addEffectToStack(playerId, c, effect);
+            }
         }
     }
 
@@ -476,12 +486,17 @@ export class Boardstate {
 
         const turn = this.info.currentTurn;
         for (const stackItem of turn.stack) {
-            if (stackItem.effect) {
-                console.log(`RUNNING: ${stackItem}\t(from ${stackItem.card.name})`);
-            } else {
-                console.log(`PLAYING: ${stackItem.card.name}`);
+            switch (stackItem.effect) {
+                case "cast":
+                    console.log(`PLAYING: ${stackItem.card.name}`);
+                    this.addCardsToZone(turn.playerId, "battlefield", [stackItem.card]);
+                    break;
+                default:
+                    console.log(`RUNNING: ${stackItem.effect}\t(from ${stackItem.card.name})`);
+                    break;
             }
         }
+        turn.stack = [];
     }
 
     public playableCards() {
@@ -499,6 +514,11 @@ export class Boardstate {
                 cards.push(card);
             } else if (manaCards.length > 0) {
                 // TODO: add card if payable with mana
+                const cost = toColorArray(card.mana_cost);
+                const optionsThatWouldPay = manaCardsThatWouldPayCost(cost, manaCards);
+                if (optionsThatWouldPay.length > 0) {
+                    cards.push(card);
+                }
             }
         }
 
@@ -513,15 +533,45 @@ export class Boardstate {
         });
     }
 
-    public playCard(card: CardId) {
+    public playCard(cardId: CardId) {
         if (!this.info.currentTurn) {
             throw new Error("Turn is empty. Make sure to start the game first");
         }
 
         const turn = this.info.currentTurn;
-        const cRemoved = this.removeCardsFromZone(turn.playerId, "hand", [card]);
-        console.log(`PLAYING ${cRemoved[0]!.name}`);
-        // TODO: replace with stack
-        this.addCardsToZone(turn.playerId, "battlefield", cRemoved);
+        const card = this.getCardFromZone(turn.playerId, "hand", cardId);
+        if (card.cmc > 0) {
+            // TODO: finalize this shit
+            /*
+            const manaCards = this.playerManaCardOptions();
+            const cost = toColorArray(card.mana_cost);
+            const optionsThatWouldPay = manaCardsThatWouldPayCost(cost, manaCards);
+            if (optionsThatWouldPay.length > 0) {
+                optionsThatWouldPay.forEach(option => {
+                    this.payCost(option.manaOption.cost, option.card);
+                    this.floatMana(option.manaOption.options.at(0)!);
+                });
+            }*/
+        }
+
+        const cRemoved = this.removeCardsFromZone(turn.playerId, "hand", [cardId]);
+        cRemoved.forEach(c => {
+            this.addEffectToStack(turn.playerId, c, "cast");
+        });
+    }
+
+    private payCost(cost: string, card: Card) {
+        if (cost.includes("{T}")) {
+            card.tapped = true;
+        }
+    }
+
+    private floatMana(mana: MtgShortColor[]) {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        turn.floatingMana.push(...mana);
     }
 }
