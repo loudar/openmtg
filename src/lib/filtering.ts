@@ -37,24 +37,23 @@ export function producesMana(text: string) {
     return text.match(/Add \w+ mana/gim) || text.match(/Add \{[WRUBGC]}/gim);
 }
 
-export function producedMana(text: string) {
+export function producedManaOptions(text: string) {
     const groups = text.match(/\{([WRUBGC])}(?:\{([WRUBGC])})?/gim);
     if (!groups) {
         return [];
     }
 
-    return groups.map(g => toManaOptions(g));
+    return groups.map(g => toManaOptions(g))
+        .flatMap(g => g);
 }
 
 /**
- * Converts text like "{W} or {U}" to a useful mana array
+ * Converts text like "{W}{U} or {U}{B}" to a usable mana array
  * @param text
  */
 function toManaOptions(text: string): MtgShortColor[][] {
     return text.split(" or ")
         .map(option => {
-            console.log(option);
-
             return option.replaceAll("{", "")
                 .replaceAll("}", "")
                 .split("") as MtgShortColor[];

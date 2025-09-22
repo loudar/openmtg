@@ -42,14 +42,16 @@ export class GameSimulator {
                 bs.playerUntapCards();
                 break;
             case Phase.Upkeep:
+                bs.playerTriggerUpkeep();
                 break;
             case Phase.Draw:
                 bs.playerDrawCard();
                 break;
             case Phase.Main:
-                /*while (bs.playerUntappedMana() > bs.playerLowestManaCost()) {
-                    bs.playCard(bs.playerCardWithLowestManaCost());
-                }*/
+                while (bs.playableCards().length > 0) {
+                    console.log("playable cards: ", bs.playableCards().map(c => c.name));
+                    bs.playCard(bs.playableCards().at(0)!.uniqueId);
+                }
                 break;
             case Phase.CombatStart:
                 break;

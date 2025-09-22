@@ -1,8 +1,8 @@
-import type {Card, Deck} from "../models/MTG.ts";
+import {type Card, type Deck, MtgShortColor} from "../models/MTG.ts";
 import type {CounterType} from "../models/CounterType.ts";
 import {fisherYatesShuffle} from "./shuffling.ts";
-import {filterCards, isLand, producedMana, producesMana} from "./filtering.ts";
-import {cardAbilites} from "./cardFeatures.ts";
+import {filterCards, isLand, producedManaOptions, producesMana} from "./filtering.ts";
+import {type Ability, cardAbilites} from "./cardFeatures.ts";
 
 export type ZoneType =
     | "library"
@@ -71,13 +71,20 @@ export const DefaultPhases: Phase[] = [
 ]
 
 export interface Turn {
+    landPlayed: boolean;
     round: number;
     playerId: PlayerId;
     extraCombatPhaseCount: number;
     phases: Phase[];
     currentPhase?: Phase;
-    spellStack: Card[];
+    stack: StackItem[];
     playedSpells: Card[];
+}
+
+export interface StackItem {
+    playedBy: PlayerId,
+    effect?: string,
+    card: Card,
 }
 
 export interface BoardstateInfo {
@@ -103,6 +110,12 @@ export interface CardFilter {
     regex?: RegExp;
     filterFunction?: (cardProperty: any) => boolean;
     required?: boolean;
+}
+
+interface ManaOption {
+    cost: string;
+    text: string;
+    options: MtgShortColor[][];
 }
 
 export class Boardstate {
@@ -166,7 +179,8 @@ export class Boardstate {
             playerId: firstPlayer.id,
             extraCombatPhaseCount: 0,
             playedSpells: [],
-            spellStack: [],
+            stack: [],
+            landPlayed: false
         };
         this.info.firstPlayerId = firstPlayer.id;
     }
@@ -218,7 +232,8 @@ export class Boardstate {
             phases: DefaultPhases,
             playedSpells: [],
             currentPhase: undefined,
-            spellStack: []
+            stack: [],
+            landPlayed: false
         } satisfies Turn;
     }
 
@@ -262,7 +277,7 @@ export class Boardstate {
             if (zone.type === zoneType) {
                 const outCards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
                 out.push(...outCards);
-                zone.cards = zone.cards.filter(c => cardIds.includes(c.uniqueId));
+                zone.cards = zone.cards.filter(c => !cardIds.includes(c.uniqueId));
             }
         });
         return out;
@@ -329,8 +344,23 @@ export class Boardstate {
         const turn = this.info.currentTurn;
         const battlefield = this.getPlayerZone(turn.playerId, "battlefield");
         battlefield.cards.forEach(c => {
+            if (this.cardDoesNotUntap(c)) {
+                return;
+            }
+
             c.tapped = false;
         });
+    }
+
+    public cardDoesNotUntap(c: Card) {
+        const abs = cardAbilites(c);
+        if (abs.some(a => !a.cost && a.text === `${c.name} doesn't untap during your untap step`)) {
+            return true;
+        }
+
+        // TODO: implement global untap prevention effects
+
+        return false;
     }
 
     public tapCard(playerId: PlayerId, cardId: CardId) {
@@ -342,19 +372,19 @@ export class Boardstate {
         card.tapped = true;
     }
 
-    public playerUntappedMana() {
+    public playerManaCardOptions() {
         if (!this.info.currentTurn) {
             throw new Error("Turn is empty. Make sure to start the game first");
         }
 
         const turn = this.info.currentTurn;
-        return this.playerHasUntappedMana(turn.playerId);
+        return this.untappedManaOptions(turn.playerId);
     }
 
-    public playerHasUntappedMana(playerId: string) {
+    public untappedManaOptions(playerId: string) {
         const battlefield = this.getPlayerZone(playerId, "battlefield");
         const cardsThatCanProduceMana = battlefield.cards.filter(c => producesMana(c.oracle_text) || isLand(c));
-        const cardsWithFreeAbility = cardsThatCanProduceMana.filter(c => {
+        const cardsWithTappableManaAbility = cardsThatCanProduceMana.filter(c => {
             const tapForManaAbs = cardAbilites(c).filter(a => (!a.cost || a.cost === "{T}") && producesMana(a.text));
             if (tapForManaAbs.length === 0 && isLand(c)) {
                 return !c.tapped;
@@ -363,11 +393,137 @@ export class Boardstate {
             return tapForManaAbs.length > 0 && !c.tapped;
         });
 
-        return cardsWithFreeAbility.map(c => {
-            const abs = cardAbilites(c).filter(a => (!a.cost || a.cost === "{T}") && producesMana(a.text))
-                .map(a => producedMana(a.text));
-
-            return abs.reduce((prev, cur) => prev + (cur.at(0)?.at(0)?.length ?? 0), 0);
+        return cardsWithTappableManaAbility.map(c => {
+            return {
+                card: c,
+                manaOptions: cardAbilites(c).filter(a => producesMana(a.text))
+                    .map(a => <ManaOption>{
+                        cost: a.cost,
+                        text: a.text,
+                        options: producedManaOptions(a.text)
+                    })
+            };
         });
+    }
+
+    public playerTriggerUpkeep() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        const bf = this.getPlayerZone(turn.playerId, "battlefield");
+        bf.cards.forEach(c => {
+            const abs = cardAbilites(c);
+            for (const ability of abs) {
+                const trigger = "At the beginning of your upkeep,";
+                if (ability.text.startsWith(trigger)) {
+                    this.runEffect(turn.playerId, c, ability, trigger);
+                }
+            }
+        });
+
+        this.info.players.forEach(p => {
+            if (p.id !== turn.playerId) {
+                this.playerTriggerOpponentUpkeep(p.id);
+            }
+        });
+
+        this.resolveStack();
+    }
+
+    public playerTriggerOpponentUpkeep(playerId: PlayerId) {
+        const bf = this.getPlayerZone(playerId, "battlefield");
+        bf.cards.forEach(c => {
+            const abs = cardAbilites(c);
+            for (const ability of abs) {
+                const trigger = "At the beginning of each opponent's upkeep,";
+                if (ability.text.startsWith(trigger)) {
+                    this.runEffect(playerId, c, ability, trigger);
+                }
+            }
+        });
+    }
+
+    public runEffect(playerId: PlayerId, c: Card, ability: Ability, trigger: string) {
+        const effect = ability.text.slice(trigger.length);
+        const justHappens = !effect.includes("if") && !effect.includes("unless") && !effect.includes("you may");
+        console.log(effect);
+        if (justHappens || this.conditionMet(c, effect)) {
+            this.addEffectToStack(playerId, c, effect);
+        }
+    }
+
+    private conditionMet(c: Card, effect: string) {
+        return false;
+    }
+
+    private addEffectToStack(playerId: PlayerId, c: Card, effect: string) {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        turn.stack.push({
+            playedBy: playerId,
+            effect,
+            card: c
+        });
+    }
+
+    private resolveStack() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        for (const stackItem of turn.stack) {
+            if (stackItem.effect) {
+                console.log(`RUNNING: ${stackItem}\t(from ${stackItem.card.name})`);
+            } else {
+                console.log(`PLAYING: ${stackItem.card.name}`);
+            }
+        }
+    }
+
+    public playableCards() {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        const manaCards = this.playerManaCardOptions();
+        const hand = this.getPlayerZone(turn.playerId, "hand");
+        const cards: Card[] = [];
+
+        for (const card of hand.cards) {
+            if (isLand(card) && !turn.landPlayed) {
+                cards.push(card);
+            } else if (manaCards.length > 0) {
+                // TODO: add card if payable with mana
+            }
+        }
+
+        return cards.sort((a, b) => {
+            if (isLand(a) || a.cmc < b.cmc) {
+                return -1;
+            } else if (b.cmc < a.cmc) {
+                return 1;
+            } else {
+                return 0;
+            }
+        });
+    }
+
+    public playCard(card: CardId) {
+        if (!this.info.currentTurn) {
+            throw new Error("Turn is empty. Make sure to start the game first");
+        }
+
+        const turn = this.info.currentTurn;
+        const cRemoved = this.removeCardsFromZone(turn.playerId, "hand", [card]);
+        console.log(`PLAYING ${cRemoved[0]!.name}`);
+        // TODO: replace with stack
+        this.addCardsToZone(turn.playerId, "battlefield", cRemoved);
     }
 }
