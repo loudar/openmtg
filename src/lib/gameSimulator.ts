@@ -71,6 +71,7 @@ export class GameSimulator {
                 break;
         }
 
+        bs.resolveStack();
         bs.checkForWins();
     }
 }

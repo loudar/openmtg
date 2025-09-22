@@ -428,8 +428,6 @@ export class Boardstate {
                 this.playerTriggerOpponentUpkeep(p.id);
             }
         });
-
-        this.resolveStack();
     }
 
     public playerTriggerOpponentUpkeep(playerId: PlayerId) {
@@ -471,7 +469,7 @@ export class Boardstate {
         });
     }
 
-    private resolveStack() {
+    resolveStack() {
         if (!this.info.currentTurn) {
             throw new Error("Turn is empty. Make sure to start the game first");
         }
