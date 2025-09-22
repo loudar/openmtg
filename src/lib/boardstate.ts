@@ -266,11 +266,13 @@ export class Boardstate {
     }
 
     public addCardsToZone(playerId: PlayerId, zoneType: ZoneType, cards: Card[]) {
-        this.getPlayerById(playerId).zones.forEach(zone => {
-            if (zone.type === zoneType) {
-                zone.cards.push(...cards);
-            }
-        });
+        const zone = this.getPlayerZone(playerId, zoneType);
+        for (const card of cards) {
+            zone.cards.push(card);
+
+            // TODO: check for any cards that have "whenever x enters y, do z"
+            // this.addEffectToStack(playerId, card, `enter-${zoneType}`);
+        }
     }
 
     public removeCardsFromZone(playerId: PlayerId, zoneType: ZoneType, cardIds: CardId[]) {
@@ -372,7 +374,7 @@ export class Boardstate {
     }
 
     public tapCard(playerId: PlayerId, cardId: CardId) {
-        const card = this.getPlayerZone(playerId, "battlefield").cards.find(card => card.uniqueId === cardId);
+        const card = this.getCardFromZone(playerId, "battlefield", cardId);
         if (!card) {
             throw new Error(`Card with unique ID ${cardId} not found fo rplayer ${playerId}`);
         }
@@ -454,15 +456,41 @@ export class Boardstate {
     public runEffect(playerId: PlayerId, c: Card, ability: Ability, trigger: string) {
         const effects = ability.text.slice(trigger.length).split(".");
         for (const effect of effects) {
-            const justHappens = !effect.includes("if") && !effect.includes("unless") && !effect.includes("you may");
-            console.log(effect);
-            if (justHappens || this.conditionMet(c, effect)) {
+            const conditions = ["if", "when", "unless", "you may"];
+            const justHappens = !conditions.some(c => effect.includes(c));
+            if (justHappens) {
                 this.addEffectToStack(playerId, c, effect);
+                continue;
+            }
+
+            const parts = effect.split(",");
+            if (this.conditionMet(playerId, c, parts.at(0)!)) {
+                this.addEffectToStack(playerId, c, parts.at(1)!);
             }
         }
     }
 
-    private conditionMet(c: Card, effect: string) {
+    private conditionMet(playerId: PlayerId, c: Card, effect: string) {
+        let target;
+        if (effect.startsWith(`if ${c.name}`)) {
+            target = {
+                type: "card",
+                reference: c,
+            };
+        } else if (effect.startsWith(`if you`)) {
+            target = {
+                type: "player",
+                reference: playerId,
+            }
+        } else if (effect.startsWith(`if an opponent`)) {
+            target = {
+                type: "opponent",
+                reference: playerId,
+            }
+        }
+
+
+
         return false;
     }
 
@@ -485,7 +513,12 @@ export class Boardstate {
         }
 
         const turn = this.info.currentTurn;
-        for (const stackItem of turn.stack) {
+        while (turn.stack.length > 0) {
+            const stackItem = turn.stack.pop();
+            if (!stackItem) {
+                break;
+            }
+
             switch (stackItem.effect) {
                 case "cast":
                     console.log(`PLAYING: ${stackItem.card.name}`);
@@ -495,8 +528,9 @@ export class Boardstate {
                     console.log(`RUNNING: ${stackItem.effect}\t(from ${stackItem.card.name})`);
                     break;
             }
+
+            this.triggerSecondaryEffects(turn.playerId, stackItem);
         }
-        turn.stack = [];
     }
 
     public playableCards() {
@@ -573,5 +607,9 @@ export class Boardstate {
 
         const turn = this.info.currentTurn;
         turn.floatingMana.push(...mana);
+    }
+
+    private triggerSecondaryEffects(playerId: PlayerId, stackItem: StackItem) {
+        // TODO: implement stuff like "whenever x, do y"
     }
 }
